@@ -1,0 +1,17 @@
+team_id: T05-06
+nombre: "IT, Seguridad y Continuidad"
+departamento: "Tecnología, Datos e Innovación"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Gabriel
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: []
+base_organigrama: "Tecnologia/Sistemas [SOLO]"
+
+owner_digital: C-06   # consultor bajo demanda (§5-bis), no plaza permanente
+agentes: []
+razon_cobertura: "Sin agente de dominio. svc-rbac + herramientas estandar; C-06 y C-08 bajo demanda"
+servicios_de_apoyo: [svc-rbac]
+consultores: [C-06, C-08]

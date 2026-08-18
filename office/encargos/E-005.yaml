@@ -1,0 +1,14 @@
+id: E-005
+titulo: Componentes y design system del panel
+agente: C-02
+convocado_por: D5-01
+estado: pendiente
+descripcion: 'Módulo: frontend. Problema: sin sistema de componentes cada pantalla del ERP inventará el
+  suyo. Restricción: se construye una sola vez y sirve para los módulos que siguen.'
+entregable_esperado: Inventario de componentes, tokens y guía de uso.
+depende_de:
+- E-004
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-005

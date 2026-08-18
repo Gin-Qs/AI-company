@@ -1,0 +1,14 @@
+id: E-004
+titulo: Flujo de pantalla de la bandeja
+agente: C-01
+convocado_por: D5-01
+estado: pendiente
+descripcion: 'Módulo: producto/UX. Problema: quien aprueba necesita decidir en segundos y hoy no ve el
+  SLA. Restricción: el owner del equipo es quien recibe; el orden lo manda el vencimiento.'
+entregable_esperado: Dos flujos alternativos con wireframes y su comparación.
+depende_de:
+- E-001
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-004

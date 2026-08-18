@@ -1,0 +1,14 @@
+id: E-009
+titulo: Ambientes, despliegue y respaldo del ERP
+agente: C-08
+convocado_por: D5-01
+estado: pendiente
+descripcion: 'Módulo: DevOps. Problema: no hay ambientes ni plan de recuperación. Restricción: tiene que
+  poder revertirse un despliegue malo sin perder la bandeja.'
+entregable_esperado: Plan de ambientes, despliegue, monitoreo, respaldo y recuperación.
+depende_de:
+- E-003
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-009

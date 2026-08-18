@@ -1,0 +1,26 @@
+consultant_id: C-04
+nombre: "Modelo de Datos"
+tipo: consultoria            # NO es agente de dominio. No cuenta en los 33 (§5-bis)
+absorbe_v1: [A54]
+model_tier: Alto
+
+# Invocación (§5-bis.3)
+invocable_por: [Gabriel, D5-01]
+activacion: manual           # nunca lo activa un flujo, un servicio ni O1
+presupuesto: proyecto-erp    # partida separada del svc-budget operativo
+trace: svc-runlog            # cada invocación abre trace_id, con encargo, entregable y costo
+
+# Autoridad
+acciones_act: []             # regla dura: un consultor no tiene ACT-* jamás
+acceso_operacion: solo-lectura-repo
+
+se_convoca_para:
+  - "Esquema, relaciones e integridad"
+  - "Migraciones y diccionario de datos"
+  - "Performance de consultas"
+
+no_hace:
+  - "aplicar migraciones en producción"
+  - "acceder a datos reales de clientes u operadores"
+
+contrato_entregable: obligatorio   # §7.1 — supuestos, confianza y opciones incluidos

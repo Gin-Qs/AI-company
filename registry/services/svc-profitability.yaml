@@ -1,0 +1,41 @@
+id: svc-profitability
+name: Margen Real por Dimension
+type: deterministic_python
+estado: built
+fase: 0
+owner_domain: [02-finanzas, 04-comercial]
+modulo: services/profitability
+
+# Produce la distribucion de margen real que exige el paso 2 del procedimiento de
+# calibracion de docs/umbrales.md, y contrasta el margen minimo declarado en la
+# tabla de precios contra el que la operacion entrega de verdad.
+consumidores: [svc-pricing, svc-kpi, svc-scenarios, D2-03, D4-03, D1-03]
+
+inputs:
+  - viajes
+  - costeos
+  - catalogo
+  - dimension
+outputs:
+  - margen_por_viaje
+  - margen_por_ruta
+  - margen_por_cliente
+  - margen_por_unidad
+  - margen_por_operador
+  - distribucion_margen
+  - desviaciones_tarifa
+
+tests:
+  - test_margen_viaje
+  - test_margen_ponderado_no_promedia_porcentajes
+  - test_percentiles_deterministas
+  - test_agregacion_ordena_de_peor_a_mejor
+  - test_dimension_desconocida_bloquea
+  - test_contraste_margen_minimo
+  - test_viaje_sin_ingreso_bloquea
+
+controls: [svc-validation, svc-trace]
+limits:
+  - no_recalcula_costos
+  - no_propone_umbrales_por_su_cuenta
+version: v1.0.0

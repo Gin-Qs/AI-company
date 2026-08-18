@@ -1,0 +1,5 @@
+route_id,origen,destino,km,casetas_mxn,dias_estimados,activo
+R-MTY-CDMX,Monterrey,Ciudad de Mexico,930,2450,2,si
+R-CDMX-GDL,Ciudad de Mexico,Guadalajara,540,1180,1,si
+R-GDL-MTY,Guadalajara,Monterrey,790,1980,2,si
+R-MTY-SLT,Monterrey,Saltillo,85,120,1,si

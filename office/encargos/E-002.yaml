@@ -1,0 +1,15 @@
+id: E-002
+titulo: Esquema de datos v1 del ERP
+agente: C-04
+convocado_por: D5-01
+estado: en_curso
+descripcion: 'Módulo: base de datos. Problema: el catálogo vive en CSV y no aguanta la bandeja de HITL
+  ni el histórico de viajes. Restricción: tiene que recibir sin pérdida lo que hoy produce svc-masterdata,
+  y versionar la tabla de tarifas con su vigencia.'
+entregable_esperado: Esquema, relaciones, migraciones iniciales y diccionario de datos.
+depende_de:
+- E-001
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-002

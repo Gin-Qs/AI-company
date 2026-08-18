@@ -1,0 +1,38 @@
+id: svc-masterdata
+name: Catalogo Maestro
+type: deterministic_python
+estado: built
+fase: 0
+owner_domain: [05-tecnologia-datos, 02-finanzas]
+modulo: services/masterdata
+
+# Sin este servicio no hay Fase 0: es el unico lugar donde vive cada dato maestro.
+# La tabla de tarifas es la tabla pre-aprobada de Gabriel (docs/umbrales.md), cargada
+# y versionada, no sustituida.
+consumidores: [svc-ingest, svc-costing, svc-profitability, svc-pricing, D2-03, D4-03]
+
+inputs:
+  - clientes_csv
+  - unidades_csv
+  - operadores_csv
+  - rutas_csv
+  - tarifas_csv
+  - parametros_yaml
+outputs:
+  - catalogo
+  - tarifa_vigente
+  - problemas_integridad
+  - resumen
+
+tests:
+  - test_catalogo_carga_completo
+  - test_identificador_duplicado_bloquea
+  - test_referencia_de_tarifa_inexistente
+  - test_tarifa_vigente_gana_la_mas_especifica
+  - test_integridad_reporta_todos_los_problemas
+
+controls: [CTL-AUDIT]
+limits:
+  - no_escribe_en_origen
+  - no_infiere_datos_faltantes
+version: v1.0.0

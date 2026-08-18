@@ -1,0 +1,4 @@
+unit_id,placa,tipo,modelo_anio,rendimiento_km_l,costo_adquisicion_mxn,valor_residual_mxn,vida_util_km,mantenimiento_mxn_km,costo_juego_llantas_mxn,vida_llantas_km,poliza_anual_mxn,km_anuales_esperados,activo
+U-101,ABC1234,tracto,2021,2.5,1850000,350000,1200000,2.10,42000,90000,68000,120000,si
+U-102,DEF5678,tracto,2019,2.3,1620000,300000,1200000,2.45,42000,85000,71000,115000,si
+U-103,GHI9012,raboncito,2022,3.2,980000,180000,900000,1.55,26000,70000,42000,90000,si

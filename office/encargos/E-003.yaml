@@ -1,0 +1,14 @@
+id: E-003
+titulo: Servicios y reglas de negocio del módulo HITL
+agente: C-03
+convocado_por: D5-01
+estado: pendiente
+descripcion: 'Módulo: backend. Problema: falta el flujo aprobar/rechazar/expirar con su regla de timeout
+  (§7.3). Restricción: el timeout no puede interpretarse como aprobación, nunca.'
+entregable_esperado: Diseño de servicios, máquina de estados y manejo de errores.
+depende_de:
+- E-002
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-003

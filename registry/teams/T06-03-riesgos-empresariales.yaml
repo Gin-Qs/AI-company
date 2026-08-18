@@ -1,0 +1,14 @@
+team_id: T06-03
+nombre: "Riesgos Empresariales"
+departamento: "Legal, Compliance y Riesgos"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Gabriel
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: []
+base_organigrama: "Gestion de riesgos [SOLO]"
+
+owner_digital: D6-03
+agentes: [D6-03]

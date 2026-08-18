@@ -1,0 +1,138 @@
+# Gate de Autoridad — umbrales y controles
+# Fuente normativa: docs/arquitectura-v3.md §11
+#
+# ESTADO: PARCIALMENTE CALIBRADO contra Fleeter_Descripcion_Puestos (junio 2026).
+# Las cifras de autoridad (quién aprueba qué, a partir de qué monto) son REALES y
+# vienen del organigrama firmado. Los umbrales de MARGEN siguen sin calibrar porque
+# dependen de costo por km real, que produce svc-costing en la Fase 0.
+#
+# Cada umbral declara su propio estado. Un umbral con calibrado: false no puede
+# gobernar un ACT-* en producción.
+
+version: 3.0.1
+calibrado: parcial
+calibrar_al_cerrar: fase-0   # aplica sólo a los umbrales marcados calibrado: false
+responsable_calibracion: Nay   # provee costo real; Gabriel decide el precio (organigrama)
+
+# Personas con autoridad (organigrama Fleeter, junio 2026)
+autoridades:
+  direccion: Gabriel        # Director General. Único que firma contratos y aprueba fuera de rango
+  finanzas: Nay             # Ejecuta pagos, emite CFDI, controla caja
+  comercial_ops: Ana        # Cierra ventas dentro de tabla, punto de contacto con cliente
+  logistica: Elias          # Despacho, mantenimiento, prospección
+  externos: [contador, abogado]   # sin autoridad de aprobación; sólo apoyo
+
+moneda: MXN
+
+umbrales:
+  pago_proveedor:
+    calibrado: true   # organigrama: "Solicitar aprobacion de Gabriel para pagos mayores a $20K"
+    agente_solo: nunca              # ACT-PAY es HITL siempre; el agente sólo prepara
+    humano_operativo: { max: 20000, quien: Nay }
+    direccion: { min: 20000, quien: Gabriel }
+    controles: [CTL-HITL, CTL-AUDIT, CTL-LIMIT]
+
+  descuento_tarifa:
+    calibrado: true   # organigrama: "Aprobar descuentos mayores al 5%"
+    agente_solo: "dentro de la tabla de precios pre-aprobada, sin descuento"
+    humano_operativo: { max_pct: 5, quien: Ana }
+    direccion: { min_pct: 5, quien: Gabriel }
+    controles: [CTL-LIMIT, CTL-AUDIT]
+
+  plazo_de_pago:
+    calibrado: true   # organigrama: "plazos de pago mayores a 45 dias" los aprueba Gabriel
+    humano_operativo: { max_dias: 45, quien: Ana }
+    direccion: { min_dias: 45, quien: Gabriel }
+    controles: [CTL-LIMIT, CTL-AUDIT]
+
+  cotizacion:
+    calibrado: false   # el mecanismo es real; los números de margen faltan
+    # El gate determinístico YA EXISTE en la operación: la tabla de precios
+    # pre-aprobada que Gabriel fija por ruta y actualiza mensualmente o cuando
+    # cambian costos. svc-pricing la CONSUME como dato maestro; no la inventa.
+    tabla_precios:
+      fuente: maestro   # svc-masterdata, cargado desde la tabla vigente de Gabriel
+      autoridad: Gabriel
+      frecuencia_actualizacion: mensual_o_por_cambio_de_costo
+    agente_solo: "tarifa dentro de la tabla vigente y margen >= minimo de la ruta"
+    humano_operativo: { quien: Ana, caso: "dentro de tabla, con negociacion" }
+    direccion: { quien: Gabriel, caso: "fuera de tabla, o margen < minimo de la ruta" }
+    margen_objetivo_pct: null   # por ruta; lo produce svc-costing en Fase 0
+    margen_minimo_pct: null     # por ruta; hoy vive en la tabla de Gabriel, sin sistematizar
+    controles: [CTL-LIMIT, CTL-CONF, CTL-AUDIT]
+
+  cobranza:
+    calibrado: false   # no hay política de días documentada; los valores son propuestas
+    agente_solo:
+      max_dias_vencido: 15
+      requiere: [plantilla_svc_notify]
+    humano_operativo: { min_dias: 15, max_dias: 60 }
+    direccion: { min_dias: 60, o: via_legal }
+    controles: [CTL-LIMIT, CTL-POLICY]
+
+  compromiso_viaje:
+    calibrado: true   # checklist pre-viaje de Elias: llantas, frenos, luces, documentos
+    agente_solo:
+      requiere: [unidad_disponible, operador_disponible, documentos_vigentes]
+    humano_operativo: "cualquier restricción incumplida"
+    controles: [CTL-LIMIT]
+
+  incidencia_ruta:
+    calibrado: false   # falta la tabla de severidad 1-5 acordada con Elias y Ana
+    agente_solo: { severidad_max: 2 }
+    humano_operativo: { severidad: 3 }
+    direccion: { severidad_min: 4 }  # robo, accidente
+    controles: [CTL-ESC, CTL-AUDIT]
+
+  emision_cfdi:
+    calibrado: true   # organigrama: CFDI + Carta Porte dentro de 24h post-entrega
+    agente_solo: nunca
+    humano_operativo: { quien: Nay, accion: emite }
+    direccion: { quien: Gabriel, accion: "valida y resuelve excepciones" }
+    sla_emision_horas: 24
+    controles: [CTL-HITL, CTL-AUDIT]
+
+  contratacion_baja:
+    calibrado: true   # Ana selecciona y decide; Nay procesa; Gabriel aprueba si aplica
+    agente_solo: nunca
+    humano_operativo: { quien: Ana, accion: "selecciona y evalua" }
+    administra: { quien: Nay, accion: "alta/baja IMSS y expediente" }
+    direccion: { quien: Gabriel, accion: autoriza }
+    controles: [CTL-HITL, CTL-PRIVACY, CTL-AUDIT]
+
+  contrato_cliente:
+    calibrado: true   # organigrama: Gabriel firma; contratos > $100K/año son suyos por definición
+    agente_solo: nunca
+    humano_operativo: { quien: Ana, accion: "negocia y prepara" }
+    direccion: { quien: Gabriel, accion: firma }
+    umbral_anual_direccion: 100000
+    controles: [CTL-HITL, CTL-AUDIT]
+
+# Reglas duras — no calibrables, no dependen de cifras (§11.3, §11.4)
+reglas_duras:
+  - "Ningún agente tiene ACT-* por defecto; se otorga agente por agente, con umbral."
+  - "D5-03 no puede conceder ACT-* por sí solo."
+  - "Toda ACT-PAY es CTL-HITL + doble factor."
+  - "Toda ACT-DOC-S es CTL-HITL siempre."
+  - "Toda ACT-EMAIL-S externa es CTL-HITL, salvo plantilla fija de svc-notify con
+     variables validadas, que no pasa por LLM."
+  - "Un HITL vencido escala o expira. Nunca auto-aprueba."
+  - "El fondo de emergencia equivale a 3 meses de costos fijos y no es fuente de pago
+     ordinaria: cualquier pago que lo toque es CTL-HITL de Dirección."
+  - "Ningun externo (contador, abogado) tiene autoridad de aprobacion en el Gate."
+
+# Bandeja de HITL (§7.2) — decisión congelada en v3.0.0
+hitl:
+  # UNA sola bandeja, con la aprobación dentro de ella (§7.2). Vive en el ERP que está
+  # construyendo D5 con la capa de consultoría (§5-bis). Es requisito de entrada de la Fase 1:
+  # el primer agente no se enciende sin bandeja, porque su primer HITL no tendría dónde llegar.
+  canal_unico: panel_erp
+  notificacion: whatsapp        # sólo avisa y enlaza; la aprobación ocurre en la bandeja
+  ruteo: owner_humano_del_equipo   # registry/teams/*.yaml; los co_owners ven pero no son responsables
+  bitacora: svc-runlog          # nativa, sin espejeo desde un SaaS externo
+  campos_obligatorios:
+    [trace_id, agente, accion_act, umbral_disparado, resumen_linea, entregable_url, sla]
+  sla:
+    alta:  { horas_habiles: 4,  al_vencer: escala_y_bloquea }   # pago, CFDI, contrato, siniestro severo
+    media: { dias_habiles: 1,   al_vencer: escala_una_vez_luego_expira }
+    baja:  { dias_habiles: 3,   al_vencer: expira_no_atendido }

@@ -1,0 +1,108 @@
+# Roadmap legible por máquina — arquitectura v3 §15
+#
+# El §6 dice que el campo `estado` de cada servicio "hace verificable el roadmap por máquina".
+# Este archivo es la otra mitad: la lista completa de los 33 agentes y los 31 servicios con su
+# fase declarada, exista o no todavía su archivo en registry/.
+#
+# Para qué sirve, en concreto: sin esto, en cuanto registry/agents/ deja de estar vacío el
+# validador empieza a exigir que TODO owner_digital apunte a un archivo real, y 30 equipos
+# fallarían por señalar agentes que el roadmap todavía no construye. Con esto, la diferencia
+# entre "no existe porque falta" y "no existe porque su fase no llegó" es explícita y verificable.
+#
+# Regla: un ID que no esté aquí no puede aparecer en ningún registro. Si hace falta un agente
+# nuevo, primero entra al roadmap.
+
+version: 3.0.1
+fuente: docs/arquitectura-v3.md §15
+total_agentes: 33      # 32 de dominio + O1
+total_servicios: 31
+
+# Excepción declarada: los consultores C-01…C-09 no tienen fase (§5-bis.3, regla 6).
+# "No hay fase de roadmap que los encienda; existen desde que el registro los declara."
+# Por eso viven en registry/consultants/ y no aparecen en esta lista.
+
+agentes:
+  O1:    {nombre: "Orquestador General", fase: 4}
+
+  D1-01: {nombre: "Estrategia y Decisión Ejecutiva", fase: 7}
+  D1-02: {nombre: "Gobierno Corporativo y PMO", fase: 7}
+  D1-03: {nombre: "Síntesis Ejecutiva", fase: 3}
+
+  D2-01: {nombre: "Controller Financiero", fase: 4}
+  D2-02: {nombre: "FP&A y Escenarios", fase: 4}
+  D2-03: {nombre: "Costos y Márgenes", fase: 1}
+  D2-04: {nombre: "Ciclo de Ingreso: Facturación y Cobranza", fase: 2}
+  D2-05: {nombre: "Ciclo de Egreso: CXP, Compras y Proveedores", fase: 4}
+  D2-06: {nombre: "Contabilidad, Fiscal y Documental", fase: 4}
+
+  D3-01: {nombre: "Planeación y Programación", fase: 5}
+  D3-02: {nombre: "Dispatch y Torre de Control", fase: 5}
+  D3-03: {nombre: "Incidencias y Eventos Críticos", fase: 5}
+  D3-04: {nombre: "Flota, Mantenimiento y Combustible", fase: 5}
+  D3-05: {nombre: "Evidencias y Cierre de Viaje", fase: 2}
+  D3-06: {nombre: "Seguridad y Riesgo en Ruta", fase: 5}
+
+  D4-01: {nombre: "Prospección e Inteligencia Comercial", fase: 7}
+  D4-02: {nombre: "Pipeline y Seguimiento", fase: 7}
+  D4-03: {nombre: "Pricing y Propuestas", fase: 1}
+  D4-04: {nombre: "Atención y Customer Success", fase: 7}
+  D4-05: {nombre: "Marketing y Contenido", fase: 7}
+
+  # D5 adelantado de la fase 7 a la 0 por decisión de Dirección (2026-08-18): es el
+  # departamento que construye el ERP, y el ERP es requisito de entrada de la Fase 1
+  # (bandeja de HITL en producción, §17.5). Ver docs/agentes-erp.md.
+  D5-01: {nombre: "Producto y Requerimientos ERP", fase: 7, adelantado_a: 0}
+  D5-02: {nombre: "Datos e Insights", fase: 7}
+  D5-03: {nombre: "AgentOps: Arquitectura y Calidad de Agentes", fase: 7, adelantado_a: 0}
+
+  D6-01: {nombre: "Legal Corporativo y Contratos", fase: 6}
+  D6-02: {nombre: "Compliance y Permisos", fase: 6}
+  D6-03: {nombre: "Riesgos, Seguros y Siniestros", fase: 6}
+  D6-04: {nombre: "Auditoría Interna", fase: 6}
+
+  D7-01: {nombre: "Reclutamiento y Onboarding", fase: 7}
+  D7-02: {nombre: "Nómina y Compensaciones", fase: 7}
+  D7-03: {nombre: "Capacitación, Cultura y Desempeño", fase: 7}
+
+  D8-01: {nombre: "Procesos, SOPs y Mejora Continua", fase: 7}
+  D8-02: {nombre: "ESG, Seguridad e Higiene", fase: 7}
+
+servicios:
+  svc-masterdata:     {fase: 0}
+  svc-ingest:         {fase: 0}
+  svc-costing:        {fase: 0}
+  svc-profitability:  {fase: 0}
+
+  svc-pricing:        {fase: 1}
+  svc-validation:     {fase: 1}
+  svc-trace:          {fase: 1}
+  svc-runlog:         {fase: 1}
+  svc-budget:         {fase: 1}
+
+  svc-doc-checklist:  {fase: 2}
+  svc-invoicing:      {fase: 2}
+  svc-cfdi-validate:  {fase: 2}
+  svc-ar:             {fase: 2}
+  svc-notify:         {fase: 2}
+
+  svc-treasury:       {fase: 3}
+  svc-ap:             {fase: 3}
+  svc-kpi:            {fase: 3}
+  svc-alerts:         {fase: 3}
+
+  svc-scenarios:      {fase: 4}
+  svc-financials:     {fase: 4}
+
+  svc-routing:        {fase: 5}
+  svc-capacity:       {fase: 5}
+  svc-telemetry:      {fase: 5}
+  svc-fleet-docs:     {fase: 5}
+  svc-maintenance:    {fase: 5}
+  svc-fuel:           {fase: 5}
+
+  svc-audit:          {fase: 6}
+  svc-rbac:           {fase: 6}
+  svc-privacy:        {fase: 6}
+
+  svc-payroll:        {fase: 7}
+  svc-emissions:      {fase: 7}

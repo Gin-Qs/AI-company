@@ -1,0 +1,14 @@
+id: E-007
+titulo: Matriz de roles y accesos del ERP
+agente: C-06
+convocado_por: D5-01
+estado: pendiente
+descripcion: 'Módulo: seguridad. Problema: no hay matriz de permisos y el ERP va a manejar datos de clientes
+  y de operadores. Restricción: mínimo privilegio; precursor de svc-rbac (fase 6).'
+entregable_esperado: Matriz de roles, revisión de superficie de ataque y plan de autenticación.
+depende_de:
+- E-002
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-007

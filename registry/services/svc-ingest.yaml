@@ -1,0 +1,41 @@
+id: svc-ingest
+name: Normalizacion de Origenes
+type: deterministic_python
+estado: built
+fase: 0
+owner_domain: [05-tecnologia-datos, 02-finanzas]
+modulo: services/ingest
+
+# Una fila mala se cuarentena con codigo de motivo; el lote sigue. Lo que no se
+# puede derivar por aritmetica exacta se rechaza, nunca se adivina.
+consumidores: [svc-costing, svc-profitability, svc-treasury, svc-ar, D2-03, D2-04]
+
+inputs:
+  - estado_cuenta_bancario
+  - tickets_diesel
+  - posiciones_gps
+  - viajes_erp
+outputs:
+  - movimientos_bancarios
+  - cargas_diesel
+  - recorridos_gps
+  - viajes
+  - rechazos
+  - precio_diesel_promedio
+
+tests:
+  - test_banco_cargo_abono_a_monto_firmado
+  - test_banco_fila_invalida_no_tumba_lote
+  - test_diesel_deriva_precio_por_litro
+  - test_diesel_inconsistente_se_rechaza
+  - test_diesel_unidad_fuera_de_catalogo
+  - test_gps_km_por_haversine
+  - test_viajes_referencias_desconocidas_se_rechazan
+  - test_dedupe_por_clave_natural
+  - test_precio_diesel_promedio_ponderado
+
+controls: [CTL-AUDIT]
+limits:
+  - no_corrige_importes
+  - no_descarta_filas_en_silencio
+version: v1.0.0

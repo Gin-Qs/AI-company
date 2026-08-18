@@ -1,0 +1,14 @@
+team_id: T05-03
+nombre: "Data, BI e Insights"
+departamento: "Tecnología, Datos e Innovación"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Gabriel
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: [Nay]
+base_organigrama: "Gabriel administra herramientas; Nay aporta datos financieros"
+
+owner_digital: D5-02
+agentes: [D5-02]

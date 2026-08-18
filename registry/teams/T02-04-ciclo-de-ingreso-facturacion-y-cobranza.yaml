@@ -1,0 +1,14 @@
+team_id: T02-04
+nombre: "Ciclo de Ingreso: Facturación y Cobranza"
+departamento: "Finanzas, Contabilidad y Administración"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Nay
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: [Ana, Gabriel]
+base_organigrama: "Facturacion [CON GABRIEL]; Cobranza [CON ANA]: Nay administra, Ana la relacion"
+
+owner_digital: D2-04
+agentes: [D2-04]

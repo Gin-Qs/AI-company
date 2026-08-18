@@ -1,0 +1,14 @@
+team_id: T02-05
+nombre: "Ciclo de Egreso: CXP, Compras y Proveedores"
+departamento: "Finanzas, Contabilidad y Administración"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Nay
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: [Elias]
+base_organigrama: "Compras [CON ELIAS]: Elias identifica, Nay paga"
+
+owner_digital: D2-05
+agentes: [D2-05]

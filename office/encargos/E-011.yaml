@@ -1,0 +1,14 @@
+id: E-011
+titulo: Evaluación de calidad de los primeros entregables de consultoría
+agente: D5-03
+convocado_por: Gabriel
+estado: pendiente
+descripcion: 'Módulo: AgentOps. Problema: con doce agentes disponibles la calidad ya no se vigila a mano
+  (§15). Restricción: se evalúa sobre muestra registrada en bitácora, no de memoria.'
+entregable_esperado: Rúbrica de evaluación aplicada a una muestra, con hallazgos de deriva y costo.
+depende_de:
+- E-002
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-011

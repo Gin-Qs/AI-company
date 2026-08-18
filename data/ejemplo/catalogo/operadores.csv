@@ -1,0 +1,4 @@
+operador_id,nombre,esquema_pago,pago_mxn_km,sueldo_mensual_mxn,viaticos_mxn_dia,viajes_mensuales_esperados,activo
+OP-01,Operador 01,km,2.80,0,450,0,si
+OP-02,Operador 02,mixto,1.20,9500,400,8,si
+OP-03,Operador 03,km,2.60,0,380,0,si
