@@ -1,0 +1,52 @@
+id: D5-01
+name: Producto y Requerimientos ERP
+department: 05-tecnologia-datos-innovacion
+teams:
+  - T05-01
+mission: >
+  Traducir la operación real de Fleeter en requerimientos del ERP, integrar lo que devuelven
+  los consultores y sostener el backlog. Es el único agente, además de Dirección, que puede
+  convocar a la capa de consultoría (§5-bis.3).
+
+estado: built
+fase: 7                  # fase declarada en el roadmap
+adelantado_a: 0          # decisión de Dirección 2026-08-18: sin ERP no arranca la Fase 1
+razon_adelanto: >
+  El ERP es requisito de entrada de la Fase 1 (§17.5: bandeja de HITL en producción) y es lo
+  que D5 construye junto con Dirección y los consultores (§4.1 D5). Adelantarlo no enciende
+  operación: este agente no declara ningún ACT-*.
+
+modo: proyecto           # construye el ERP; no opera el negocio
+model_tier: Medio
+absorbe: [A47, A48, A49]
+
+# En modo proyecto sólo se conectan servicios que existen hoy. Los que declara la
+# arquitectura entran cuando su fase llegue (registry/policies/roadmap.yaml).
+tools:
+  - svc-masterdata
+tools_planeadas:
+  - svc-kpi
+  - svc-validation
+  - svc-budget
+  - svc-runlog
+
+inputs: [proceso_real, dolor_operativo, restriccion_tecnica, entregable_de_consultor]
+outputs: [requerimiento, criterio_de_aceptacion, backlog_priorizado, encargo_a_consultor]
+
+# Cero ACT-*: la propiedad que hace seguro adelantar este agente. No escribe en la
+# operación, no manda correo, no toca datos de clientes ni de operadores.
+actions: []
+controls:
+  - CTL-HITL           # toda decisión de alcance la aprueba Dirección
+  - CTL-AUDIT
+  - CTL-POLICY
+
+limits:
+  - no_decide_arquitectura_solo
+  - no_escribe_en_la_operacion
+  - no_convoca_consultor_sin_encargo_escrito
+  - no_cierra_requerimiento_sin_criterio_de_aceptacion
+
+prompt: agents/prompts/D5-01.md
+memoria: agents/memoria/D5-01.md
+prompt_version: v1.0.0

@@ -1,0 +1,25 @@
+consultant_id: C-02
+nombre: "Frontend y Design System"
+tipo: consultoria            # NO es agente de dominio. No cuenta en los 33 (§5-bis)
+absorbe_v1: [A51, A52]
+model_tier: Medio
+
+# Invocación (§5-bis.3)
+invocable_por: [Gabriel, D5-01]
+activacion: manual           # nunca lo activa un flujo, un servicio ni O1
+presupuesto: proyecto-erp    # partida separada del svc-budget operativo
+trace: svc-runlog            # cada invocación abre trace_id, con encargo, entregable y costo
+
+# Autoridad
+acciones_act: []             # regla dura: un consultor no tiene ACT-* jamás
+acceso_operacion: solo-lectura-repo
+
+se_convoca_para:
+  - "Componentes, formularios y tablas del ERP"
+  - "Consistencia visual entre módulos"
+  - "QA de interfaz antes de release"
+
+no_hace:
+  - "decidir stack de frontend sin aprobación de Dirección"
+
+contrato_entregable: obligatorio   # §7.1 — supuestos, confianza y opciones incluidos

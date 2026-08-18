@@ -1,0 +1,16 @@
+team_id: T05-02
+nombre: "Arquitectura Técnica y Desarrollo"
+departamento: "Tecnología, Datos e Innovación"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Gabriel
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: []
+base_organigrama: "Ingenieria humana asistida con Claude Code"
+
+owner_digital: C-03   # consultor bajo demanda (§5-bis), no plaza permanente
+agentes: []
+razon_cobertura: "Sin agente de dominio. Ingenieria humana (Gabriel + D5) asistida con Claude Code, con la capa de consultoria C-## bajo demanda"
+consultores: [C-01, C-02, C-03, C-04, C-07, C-09]

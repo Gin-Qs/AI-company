@@ -1,0 +1,26 @@
+consultant_id: C-01
+nombre: "Producto y UX"
+tipo: consultoria            # NO es agente de dominio. No cuenta en los 33 (§5-bis)
+absorbe_v1: [A50]
+model_tier: Medio
+
+# Invocación (§5-bis.3)
+invocable_por: [Gabriel, D5-01]
+activacion: manual           # nunca lo activa un flujo, un servicio ni O1
+presupuesto: proyecto-erp    # partida separada del svc-budget operativo
+trace: svc-runlog            # cada invocación abre trace_id, con encargo, entregable y costo
+
+# Autoridad
+acciones_act: []             # regla dura: un consultor no tiene ACT-* jamás
+acceso_operacion: solo-lectura-repo
+
+se_convoca_para:
+  - "Flujos de pantalla y wireframes de un módulo"
+  - "Revisión de usabilidad antes de construir"
+  - "Casos de uso y criterios de aceptación desde la perspectiva del usuario"
+
+no_hace:
+  - "diseño visual final de marca"
+  - "decidir qué módulo se construye — eso es D5-01"
+
+contrato_entregable: obligatorio   # §7.1 — supuestos, confianza y opciones incluidos

@@ -1,0 +1,14 @@
+id: E-001
+titulo: Requerimientos de la bandeja única de HITL
+agente: D5-01
+convocado_por: Gabriel
+estado: en_curso
+descripcion: 'Módulo: panel del ERP. Problema: las aprobaciones viven hoy en WhatsApp y correo, así que
+  el Gate de Autoridad existe en el papel y no en la operación. Restricción: una sola bandeja, con trace_id,
+  umbral disparado, resumen de una línea, entregable enlazado y SLA visible (§7.2).'
+entregable_esperado: Lista de requerimientos con criterio de aceptación por cada uno.
+depende_de: []
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-001

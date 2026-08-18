@@ -1,0 +1,45 @@
+id: svc-costing
+name: Servicio de Costeo Logistico
+type: deterministic_python
+estado: built
+fase: 0
+owner_domain: [02-finanzas, 03-operaciones]
+modulo: services/costing
+
+# Fuente unica del costo por km. Ningun agente lo recalcula (seccion 3, regla 2).
+consumidores: [svc-profitability, svc-pricing, svc-scenarios, D2-03, D4-03]
+
+inputs:
+  - route_id
+  - unit_id
+  - fuel_price
+  - driver_cost
+  - tolls
+  - maintenance_factor
+  - tire_factor
+  - insurance_factor
+  - fixed_cost_allocation
+outputs:
+  - cost_per_km
+  - total_trip_cost
+  - variable_cost
+  - fixed_allocated_cost
+  - desglose
+  - assumptions
+
+tests:
+  - test_cost_per_km
+  - test_missing_fuel_price
+  - test_negative_distance_blocked
+  - test_desglose_suma_total
+  - test_supuestos_declarados
+  - test_entrada_explicita_gana_al_catalogo
+  - test_operador_por_esquema_mixto
+  - test_fijos_por_viaje
+  - test_sueldo_fijo_sin_viajes_esperados_bloquea
+
+controls: [svc-validation, svc-trace]
+limits:
+  - no_estima_datos_faltantes
+  - no_costea_con_distancia_no_positiva
+version: v1.0.0

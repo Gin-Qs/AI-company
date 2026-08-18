@@ -1,0 +1,14 @@
+team_id: T04-01
+nombre: "Prospección e Inteligencia Comercial"
+departamento: "Comercial y Cliente"
+
+# owner_humano: responsable unico. Es a quien se enruta un HITL de este equipo y quien
+# responde por el resultado. No implica que trabaje solo (§4.2).
+owner_humano: Elias
+# co_owners: carga compartida real segun el organigrama de Fleeter. Ven la bandeja del
+# equipo y pueden actuar; la responsabilidad final no se diluye entre ellos.
+co_owners: [Ana]
+base_organigrama: "Prospeccion [SOLO-compartida]: Elias prospecta y califica"
+
+owner_digital: D4-01
+agentes: [D4-01]

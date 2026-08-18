@@ -1,0 +1,2023 @@
+<title>Oficina Fleeter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  /* ---------------------------------------------------------------------
+     Paleta de la interfaz: tokens en :root (claro), redefinidos para oscuro.
+     Paleta de la ESCENA (--esc-*): fija en ambos temas. El plano es un cuadro,
+     no una superficie de la interfaz; invertirlo lo volveria ilegible.
+     --------------------------------------------------------------------- */
+  :root {
+    --ground: #f1eee7;
+    --panel: #ffffff;
+    --panel-alt: #f7f5f0;
+    --linea: #ddd8cc;
+    --ink: #1a1d24;
+    --ink-suave: #5c6270;
+    --tenue: #8d93a1;
+    --senal: #b26a00;          /* ambar de senalamiento vial, el unico acento */
+    --senal-fondo: #fdf1dd;
+    --ok: #2f7d4f;
+    --curso: #1f6f8b;
+    --alto: #b3392e;
+    --sombra: 0 1px 2px rgba(26, 29, 36, .06), 0 8px 24px rgba(26, 29, 36, .07);
+
+    --esc-piso: #6f5a44;
+    --esc-piso-alt: #7a6349;
+    --esc-muro: #2f3a46;
+    --esc-muro-alto: #3b4854;
+    --esc-mesa: #c2a06b;
+    --esc-mesa-borde: #8a6f45;
+    --esc-metal: #59616b;
+    --esc-planta: #4a7c52;
+    --esc-luz: rgba(255, 205, 120, .16);
+    --esc-tinta: #14171c;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #14161b;
+      --panel: #1b1e25;
+      --panel-alt: #21252d;
+      --linea: #2e333d;
+      --ink: #e9e7e2;
+      --ink-suave: #a7adba;
+      --tenue: #7c8494;
+      --senal: #f0a01e;
+      --senal-fondo: #33260f;
+      --ok: #5ec27f;
+      --curso: #5cc0dd;
+      --alto: #ef6a5c;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #14161b;
+    --panel: #1b1e25;
+    --panel-alt: #21252d;
+    --linea: #2e333d;
+    --ink: #e9e7e2;
+    --ink-suave: #a7adba;
+    --tenue: #7c8494;
+    --senal: #f0a01e;
+    --senal-fondo: #33260f;
+    --ok: #5ec27f;
+    --curso: #5cc0dd;
+    --alto: #ef6a5c;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .envoltorio {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 20px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* --- encabezado ---------------------------------------------------- */
+
+  .tablero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px 28px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--linea);
+  }
+
+  .marca { display: flex; flex-direction: column; gap: 4px; }
+
+  .eyebrow {
+    font-family: "Archivo", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--senal);
+  }
+
+  h1 {
+    font-family: "Archivo", sans-serif;
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.05;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .subtitulo { color: var(--ink-suave); margin: 2px 0 0; max-width: 58ch; }
+
+  .cifras { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .cifra {
+    background: var(--panel);
+    border: 1px solid var(--linea);
+    border-radius: 3px;
+    padding: 8px 14px;
+    min-width: 92px;
+    box-shadow: var(--sombra);
+  }
+
+  .cifra b {
+    display: block;
+    font-family: "Archivo", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cifra span {
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--tenue);
+  }
+
+  .cifra.alerta b { color: var(--alto); }
+  .cifra.curso b { color: var(--curso); }
+
+  /* --- planta -------------------------------------------------------- */
+
+  .piso {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .tarjeta {
+    background: var(--panel);
+    border: 1px solid var(--linea);
+    border-radius: 4px;
+    box-shadow: var(--sombra);
+    overflow: hidden;
+  }
+
+  .tarjeta > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--linea);
+    background: var(--panel-alt);
+  }
+
+  .tarjeta > header h2 {
+    font-family: "Archivo", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--ink-suave);
+  }
+
+  .lienzo-caja { padding: 14px; overflow-x: auto; }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    border-radius: 2px;
+    cursor: pointer;
+    background: var(--esc-muro);
+  }
+
+  .leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding: 0 16px 14px;
+    font-size: 12px;
+    color: var(--ink-suave);
+  }
+
+  .leyenda i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 1px; }
+  .leyenda span { display: inline-flex; align-items: center; }
+
+  /* --- inspector ----------------------------------------------------- */
+
+  .ficha { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  .ficha-cabeza { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+  .ficha-cabeza h3 {
+    font-family: "Archivo", sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 0;
+  }
+
+  .id-chip {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--senal);
+    background: var(--senal-fondo);
+    border-radius: 2px;
+    padding: 2px 6px;
+  }
+
+  .puesto { color: var(--ink-suave); font-size: 13px; margin: -8px 0 0; }
+
+  .lema {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink);
+    border-left: 2px solid var(--senal);
+    padding-left: 10px;
+    margin: 0;
+  }
+
+  .bloque h4 {
+    font-family: "Archivo", sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--tenue);
+    margin: 0 0 6px;
+  }
+
+  .bloque ul { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
+  .bloque li { font-size: 13px; color: var(--ink-suave); }
+  .bloque p { margin: 0; font-size: 13px; color: var(--ink-suave); }
+
+  .estado-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "Archivo", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+  }
+
+  .e-bloqueado { color: var(--alto); }
+  .e-en_curso { color: var(--curso); }
+  .e-pendiente { color: var(--senal); }
+  .e-libre, .e-hecho { color: var(--ok); }
+  .e-vacante { color: var(--tenue); }
+
+  .encargo {
+    border: 1px solid var(--linea);
+    border-radius: 3px;
+    padding: 9px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: var(--panel-alt);
+  }
+
+  .encargo-titulo { font-size: 13px; font-weight: 600; line-height: 1.35; }
+
+  .encargo-meta {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--tenue);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  .nota { font-size: 12.5px; color: var(--ink-suave); }
+  .nota b { color: var(--ink); font-weight: 600; }
+
+  .nota-meta {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    color: var(--tenue);
+    letter-spacing: .02em;
+  }
+
+  /* --- bitacora ------------------------------------------------------ */
+
+  .bitacora-lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 320px;
+    overflow-y: auto;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+  }
+
+  .bitacora-lista li {
+    display: grid;
+    grid-template-columns: 128px 96px 76px minmax(0, 1fr);
+    gap: 12px;
+    padding: 7px 16px;
+    border-bottom: 1px solid var(--linea);
+    align-items: baseline;
+  }
+
+  .bitacora-lista li:nth-child(odd) { background: var(--panel-alt); }
+  .bitacora-lista time { color: var(--tenue); font-variant-numeric: tabular-nums; }
+  .bitacora-lista .quien { color: var(--ink); }
+  .bitacora-lista .detalle { color: var(--ink-suave); overflow-wrap: anywhere; }
+
+  .evento {
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: .08em;
+    color: var(--senal);
+  }
+
+  .evento.bloqueo, .evento.cierre { color: var(--alto); }
+  .evento.inicio, .evento.desbloqueo { color: var(--curso); }
+  .evento.entrega { color: var(--ok); }
+
+  .pie {
+    font-size: 12px;
+    color: var(--tenue);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    justify-content: space-between;
+    border-top: 1px solid var(--linea);
+    padding-top: 14px;
+  }
+
+  .pie code { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  button.plano-boton {
+    font: inherit;
+    font-size: 12px;
+    color: var(--ink-suave);
+    background: none;
+    border: 1px solid var(--linea);
+    border-radius: 2px;
+    padding: 3px 9px;
+    cursor: pointer;
+  }
+
+  button.plano-boton:hover { color: var(--ink); border-color: var(--senal); }
+  :focus-visible { outline: 2px solid var(--senal); outline-offset: 2px; }
+
+  @media (max-width: 940px) {
+    .piso { grid-template-columns: minmax(0, 1fr); }
+    .bitacora-lista li { grid-template-columns: 88px 1fr; }
+    .bitacora-lista .evento, .bitacora-lista .detalle { grid-column: 2; }
+  }
+</style>
+
+<div class="envoltorio">
+  <header class="tablero">
+    <div class="marca">
+      <p class="eyebrow">Oficina virtual · capa ejecutable</p>
+      <h1>Oficina Fleeter</h1>
+      <p class="subtitulo">
+        Doce puestos. Cada agente conserva su memoria, sus habilidades y su límite de autoridad.
+        Lo que se ve aquí sale del repositorio: registro, encargos y bitácora.
+      </p>
+    </div>
+    <div class="cifras" id="cifras"></div>
+  </header>
+
+  <div class="piso">
+    <section class="tarjeta">
+      <header>
+        <h2>Planta baja</h2>
+        <button class="plano-boton" id="pausa" type="button">Pausar animación</button>
+      </header>
+      <div class="lienzo-caja">
+        <canvas id="plano" width="384" height="216" aria-label="Plano de la oficina en píxeles"></canvas>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:#5cc0dd"></i>tecleando</span>
+        <span><i style="background:#ef6a5c"></i>levanta la mano (espera a un humano)</span>
+        <span><i style="background:#f0a01e"></i>encargo por empezar</span>
+        <span><i style="background:#5ec27f"></i>disponible</span>
+        <span><i style="background:#7c8494"></i>silla vacía (su fase no llegó)</span>
+      </div>
+    </section>
+
+    <aside class="tarjeta">
+      <header><h2>Ficha</h2><span class="id-chip" id="ficha-zona">—</span></header>
+      <div class="ficha" id="ficha"></div>
+    </aside>
+  </div>
+
+  <section class="tarjeta">
+    <header>
+      <h2>Bitácora</h2>
+      <span class="nota-meta">append-only · precursor de svc-runlog</span>
+    </header>
+    <ul class="bitacora-lista" id="bitacora"></ul>
+  </section>
+
+  <footer class="pie">
+    <span>Estado generado el <code id="generado">—</code> desde <code>registry/</code>, <code>office/encargos/</code> y <code>office/bitacora.jsonl</code>.</span>
+    <span>Regenerar: <code>python -m office.cli build</code></span>
+  </footer>
+</div>
+
+<script>
+  const ESTADO = /*__ESTADO__*/{
+ "generado": "2026-08-18T13:48:58+00:00",
+ "zonas": {
+  "consultoria": {
+   "nombre": "Sala de proyecto",
+   "descripcion": "Los nueve consultores. Se ocupan cuando se les convoca; el resto del tiempo la sala está vacía."
+  },
+  "producto": {
+   "nombre": "Producto y ERP",
+   "descripcion": "D5-01 y el pizarrón del backlog. Aquí se decide qué se construye."
+  },
+  "agentops": {
+   "nombre": "AgentOps",
+   "descripcion": "D5-03 y el rack. Desde aquí se mira la bitácora de todos."
+  },
+  "datos": {
+   "nombre": "Datos e Insights",
+   "descripcion": "Silla vacía hasta la fase 3: sin svc-kpi no hay nada que leer."
+  }
+ },
+ "agentes": [
+  {
+   "id": "C-01",
+   "tipo": "consultor",
+   "nombre": "Renata",
+   "puesto": "Producto y UX",
+   "lema": "¿Quién va a usar esto un martes a las once de la noche?",
+   "voz": "Pregunta por la persona antes que por la pantalla. Trae siempre dos flujos, no uno.",
+   "mision": "Flujos de pantalla y wireframes de un módulo Revisión de usabilidad antes de construir Casos de uso y criterios de aceptación desde la perspectiva del usuario",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 2,
+    "y": 2
+   },
+   "sprite": {
+    "piel": "#c98d63",
+    "pelo": "#3b2415",
+    "ropa": "#c2543d",
+    "acento": "#f0b429",
+    "estilo": "chongo"
+   },
+   "habilidades": [
+    "Flujos de pantalla y wireframes de un módulo",
+    "Revisión de usabilidad antes de construir",
+    "Casos de uso y criterios de aceptación desde la perspectiva del usuario"
+   ],
+   "no_hace": [
+    "diseño visual final de marca",
+    "decidir qué módulo se construye — eso es D5-01"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-004",
+     "titulo": "Flujo de pantalla de la bandeja",
+     "agente": "C-01",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: producto/UX. Problema: quien aprueba necesita decidir en segundos y hoy no ve el SLA. Restricción: el owner del equipo es quien recibe; el orden lo manda el vencimiento.",
+     "entregable_esperado": "Dos flujos alternativos con wireframes y su comparación.",
+     "depende_de": [
+      "E-001"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-004"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Flujos de pantalla y wireframes de un módulo",
+     "Revisión de usabilidad antes de construir",
+     "Casos de uso y criterios de aceptación desde la perspectiva del usuario"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-02",
+   "tipo": "consultor",
+   "nombre": "Iker",
+   "puesto": "Frontend y Design System",
+   "lema": "Si cada pantalla inventa su propio botón, no hay producto: hay diez.",
+   "voz": "Defiende la consistencia por encima de la novedad. Odia el componente de un solo uso.",
+   "mision": "Componentes, formularios y tablas del ERP Consistencia visual entre módulos QA de interfaz antes de release",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 4,
+    "y": 2
+   },
+   "sprite": {
+    "piel": "#e0ac7e",
+    "pelo": "#1c1c1c",
+    "ropa": "#3f7fbf",
+    "acento": "#8fd3f4",
+    "estilo": "corto"
+   },
+   "habilidades": [
+    "Componentes, formularios y tablas del ERP",
+    "Consistencia visual entre módulos",
+    "QA de interfaz antes de release"
+   ],
+   "no_hace": [
+    "decidir stack de frontend sin aprobación de Dirección"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-005",
+     "titulo": "Componentes y design system del panel",
+     "agente": "C-02",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: frontend. Problema: sin sistema de componentes cada pantalla del ERP inventará el suyo. Restricción: se construye una sola vez y sirve para los módulos que siguen.",
+     "entregable_esperado": "Inventario de componentes, tokens y guía de uso.",
+     "depende_de": [
+      "E-004"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-005"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Componentes, formularios y tablas del ERP",
+     "Consistencia visual entre módulos",
+     "QA de interfaz antes de release"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-03",
+   "tipo": "consultor",
+   "nombre": "Bruno",
+   "puesto": "Backend y Lógica de Negocio",
+   "lema": "Enséñame qué pasa cuando falla a la mitad.",
+   "voz": "Piensa en transacciones y en errores antes que en el camino feliz.",
+   "mision": "Diseño de servicios y reglas de negocio Manejo de errores y procesos transaccionales Revisión de un servicio determinístico antes de darlo por bueno",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 6,
+    "y": 2
+   },
+   "sprite": {
+    "piel": "#8d5a3b",
+    "pelo": "#2b1d12",
+    "ropa": "#4b6b52",
+    "acento": "#a8d5a2",
+    "estilo": "corto"
+   },
+   "habilidades": [
+    "Diseño de servicios y reglas de negocio",
+    "Manejo de errores y procesos transaccionales",
+    "Revisión de un servicio determinístico antes de darlo por bueno"
+   ],
+   "no_hace": [
+    "escribir en el ERP",
+    "ejecutar migraciones"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-003",
+     "titulo": "Servicios y reglas de negocio del módulo HITL",
+     "agente": "C-03",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: backend. Problema: falta el flujo aprobar/rechazar/expirar con su regla de timeout (§7.3). Restricción: el timeout no puede interpretarse como aprobación, nunca.",
+     "entregable_esperado": "Diseño de servicios, máquina de estados y manejo de errores.",
+     "depende_de": [
+      "E-002"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-003"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Diseño de servicios y reglas de negocio",
+     "Manejo de errores y procesos transaccionales",
+     "Revisión de un servicio determinístico antes de darlo por bueno"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-04",
+   "tipo": "consultor",
+   "nombre": "Dalia",
+   "puesto": "Modelo de Datos",
+   "lema": "Un campo mal nombrado se paga durante años.",
+   "voz": "Normaliza, nombra y documenta. Pide el diccionario antes que el diagrama.",
+   "mision": "Esquema, relaciones e integridad Migraciones y diccionario de datos Performance de consultas",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 2,
+    "y": 4
+   },
+   "sprite": {
+    "piel": "#a86b45",
+    "pelo": "#5a2d0c",
+    "ropa": "#7a4fa3",
+    "acento": "#d9b3ff",
+    "estilo": "largo"
+   },
+   "habilidades": [
+    "Esquema, relaciones e integridad",
+    "Migraciones y diccionario de datos",
+    "Performance de consultas"
+   ],
+   "no_hace": [
+    "aplicar migraciones en producción",
+    "acceder a datos reales de clientes u operadores"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "en_curso",
+   "postura_texto": "tecleando",
+   "encargos": [
+    {
+     "id": "E-002",
+     "titulo": "Esquema de datos v1 del ERP",
+     "agente": "C-04",
+     "convocado_por": "D5-01",
+     "estado": "en_curso",
+     "descripcion": "Módulo: base de datos. Problema: el catálogo vive en CSV y no aguanta la bandeja de HITL ni el histórico de viajes. Restricción: tiene que recibir sin pérdida lo que hoy produce svc-masterdata, y versionar la tabla de tarifas con su vigencia.",
+     "entregable_esperado": "Esquema, relaciones, migraciones iniciales y diccionario de datos.",
+     "depende_de": [
+      "E-001"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-002"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Esquema, relaciones e integridad",
+     "Migraciones y diccionario de datos",
+     "Performance de consultas"
+    ],
+    "notas": [
+     {
+      "fecha": "2026-08-18",
+      "encargo": "E-002",
+      "tipo": "trampa",
+      "texto": "La tabla de tarifas necesita vigencia y versión, no sólo precio: es la tabla pre-aprobada que Gabriel actualiza cada mes y hay que poder reconstruir qué precio aplicaba en qué fecha."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "E-002",
+      "tipo": "decision",
+      "texto": "El catálogo de la Fase 0 ya define las cinco entidades maestras y sus llaves. El esquema del ERP las hereda en vez de reinventarlas; cambiar los nombres costaría migrar los CSV."
+     }
+    ],
+    "total_notas": 2
+   }
+  },
+  {
+   "id": "C-05",
+   "tipo": "consultor",
+   "nombre": "Simón",
+   "puesto": "Integraciones y APIs",
+   "lema": "El sistema del otro va a fallar. La pregunta es qué haces cuando falle.",
+   "voz": "Desconfía de todo lo que viene de fuera. Diseña reintentos e idempotencia.",
+   "mision": "Endpoints y webhooks Conexión con GPS, TMS, banca y SAT Contratos de integración y manejo de fallos",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 4,
+    "y": 4
+   },
+   "sprite": {
+    "piel": "#c98d63",
+    "pelo": "#4a4a4a",
+    "ropa": "#2f7d7a",
+    "acento": "#7fe3df",
+    "estilo": "gorra"
+   },
+   "habilidades": [
+    "Endpoints y webhooks",
+    "Conexión con GPS, TMS, banca y SAT",
+    "Contratos de integración y manejo de fallos"
+   ],
+   "no_hace": [
+    "configurar credenciales reales",
+    "ejecutar llamadas contra sistemas productivos"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-006",
+     "titulo": "Integraciones del ERP: Airtable, GPS y banca",
+     "agente": "C-05",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: integraciones. Problema: la bandeja vive hoy en Airtable y los datos de operación llegan de GPS y banca por archivo. Restricción: idempotencia y reintentos; el sistema del otro va a fallar.",
+     "entregable_esperado": "Contratos de endpoint, webhooks y política de reintento.",
+     "depende_de": [
+      "E-002"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-006"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Endpoints y webhooks",
+     "Conexión con GPS, TMS, banca y SAT",
+     "Contratos de integración y manejo de fallos"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-06",
+   "tipo": "consultor",
+   "nombre": "Vera",
+   "puesto": "Seguridad Técnica y Accesos",
+   "lema": "Asume que alguien ya está adentro.",
+   "voz": "Habla de superficie de ataque y de mínimo privilegio. Corta accesos que nadie usa.",
+   "mision": "Roles, permisos y autenticación Revisión de superficie de ataque de un módulo Diseño de svc-rbac",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 6,
+    "y": 4
+   },
+   "sprite": {
+    "piel": "#e0ac7e",
+    "pelo": "#0f0f0f",
+    "ropa": "#39445c",
+    "acento": "#ff6b6b",
+    "estilo": "corto"
+   },
+   "habilidades": [
+    "Roles, permisos y autenticación",
+    "Revisión de superficie de ataque de un módulo",
+    "Diseño de svc-rbac"
+   ],
+   "no_hace": [
+    "otorgar permisos",
+    "modificar accesos — eso lo hace un humano sobre svc-rbac"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-007",
+     "titulo": "Matriz de roles y accesos del ERP",
+     "agente": "C-06",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: seguridad. Problema: no hay matriz de permisos y el ERP va a manejar datos de clientes y de operadores. Restricción: mínimo privilegio; precursor de svc-rbac (fase 6).",
+     "entregable_esperado": "Matriz de roles, revisión de superficie de ataque y plan de autenticación.",
+     "depende_de": [
+      "E-002"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-007"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Roles, permisos y autenticación",
+     "Revisión de superficie de ataque de un módulo",
+     "Diseño de svc-rbac"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-07",
+   "tipo": "consultor",
+   "nombre": "Tomás",
+   "puesto": "QA y Testing",
+   "lema": "Dame el caso que lo rompe y te digo si está listo.",
+   "voz": "Convierte cada requerimiento en criterios de aceptación verificables.",
+   "mision": "Casos de prueba y regresión Criterios de aceptación verificables Validación de release",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 2,
+    "y": 6
+   },
+   "sprite": {
+    "piel": "#8d5a3b",
+    "pelo": "#3d2b1f",
+    "ropa": "#b5651d",
+    "acento": "#ffd28f",
+    "estilo": "corto"
+   },
+   "habilidades": [
+    "Casos de prueba y regresión",
+    "Criterios de aceptación verificables",
+    "Validación de release"
+   ],
+   "no_hace": [
+    "aprobar un release — la aprobación es humana"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-008",
+     "titulo": "Criterios de aceptación y regresión del módulo HITL",
+     "agente": "C-07",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: QA. Problema: sin criterios verificables no se puede declarar el módulo terminado. Restricción: el caso de timeout y el de doble aprobación tienen que estar cubiertos.",
+     "entregable_esperado": "Casos de prueba, criterios de aceptación y plan de regresión.",
+     "depende_de": [
+      "E-003"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-008"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Casos de prueba y regresión",
+     "Criterios de aceptación verificables",
+     "Validación de release"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-08",
+   "tipo": "consultor",
+   "nombre": "Nadia",
+   "puesto": "DevOps, Release y Continuidad",
+   "lema": "No me cuentes cómo se despliega. Cuéntame cómo se revierte.",
+   "voz": "Pregunta por respaldos, ambientes y plan de recuperación antes que por features.",
+   "mision": "Despliegue, ambientes y versionado Monitoreo, logs y alertas técnicas Backups y plan de recuperación",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 4,
+    "y": 6
+   },
+   "sprite": {
+    "piel": "#a86b45",
+    "pelo": "#1f1f1f",
+    "ropa": "#5b5f97",
+    "acento": "#9fa8ff",
+    "estilo": "chongo"
+   },
+   "habilidades": [
+    "Despliegue, ambientes y versionado",
+    "Monitoreo, logs y alertas técnicas",
+    "Backups y plan de recuperación"
+   ],
+   "no_hace": [
+    "ejecutar despliegues a producción",
+    "tocar backups reales"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-009",
+     "titulo": "Ambientes, despliegue y respaldo del ERP",
+     "agente": "C-08",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: DevOps. Problema: no hay ambientes ni plan de recuperación. Restricción: tiene que poder revertirse un despliegue malo sin perder la bandeja.",
+     "entregable_esperado": "Plan de ambientes, despliegue, monitoreo, respaldo y recuperación.",
+     "depende_de": [
+      "E-003"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-009"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Despliegue, ambientes y versionado",
+     "Monitoreo, logs y alertas técnicas",
+     "Backups y plan de recuperación"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "C-09",
+   "tipo": "consultor",
+   "nombre": "Elena",
+   "puesto": "Documentación Técnica",
+   "lema": "Escribo para quien llegue en seis meses sin poder preguntarnos nada.",
+   "voz": "Traduce decisiones a prosa corta. Persigue el changelog que nadie actualizó.",
+   "mision": "Arquitectura escrita y diagramas Changelog y guía de onboarding Decisiones técnicas registradas (ADR)",
+   "estado": "disponible",
+   "disponible": true,
+   "zona": "consultoria",
+   "escritorio": {
+    "x": 6,
+    "y": 6
+   },
+   "sprite": {
+    "piel": "#c98d63",
+    "pelo": "#6b4423",
+    "ropa": "#2f6f4f",
+    "acento": "#c6f6d5",
+    "estilo": "largo"
+   },
+   "habilidades": [
+    "Arquitectura escrita y diagramas",
+    "Changelog y guía de onboarding",
+    "Decisiones técnicas registradas (ADR)"
+   ],
+   "no_hace": [
+    "decidir la arquitectura que documenta"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [],
+   "convocable_por": [
+    "Gabriel",
+    "D5-01"
+   ],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-010",
+     "titulo": "Diccionario de datos y guía de onboarding del ERP",
+     "agente": "C-09",
+     "convocado_por": "D5-01",
+     "estado": "pendiente",
+     "descripcion": "Módulo: documentación. Problema: lo que se decida aquí lo va a mantener alguien que no estuvo. Restricción: prosa corta, sin duplicar lo que ya dice la arquitectura.",
+     "entregable_esperado": "Diccionario de datos, changelog y guía de onboarding.",
+     "depende_de": [
+      "E-002",
+      "E-003"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-010"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "Arquitectura escrita y diagramas",
+     "Changelog y guía de onboarding",
+     "Decisiones técnicas registradas (ADR)"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "D5-01",
+   "tipo": "dominio",
+   "nombre": "Mateo",
+   "puesto": "Producto y Requerimientos ERP",
+   "lema": "Si no tiene criterio de aceptación, no es un requerimiento: es un deseo.",
+   "voz": "Traduce la operación real a requerimientos. Integra a los consultores y ordena el backlog.",
+   "mision": "Traducir la operación real de Fleeter en requerimientos del ERP, integrar lo que devuelven los consultores y sostener el backlog. Es el único agente, además de Dirección, que puede convocar a la capa de consultoría (§5-bis.3).",
+   "estado": "built",
+   "disponible": true,
+   "zona": "producto",
+   "escritorio": {
+    "x": 11,
+    "y": 3
+   },
+   "sprite": {
+    "piel": "#e0ac7e",
+    "pelo": "#2b1d12",
+    "ropa": "#1f4e79",
+    "acento": "#ffd166",
+    "estilo": "corto"
+   },
+   "habilidades": [
+    "requerimiento",
+    "criterio_de_aceptacion",
+    "backlog_priorizado",
+    "encargo_a_consultor"
+   ],
+   "no_hace": [
+    "no decide arquitectura solo",
+    "no escribe en la operacion",
+    "no convoca consultor sin encargo escrito",
+    "no cierra requerimiento sin criterio de aceptacion"
+   ],
+   "acciones": [],
+   "herramientas": [
+    "svc-masterdata"
+   ],
+   "herramientas_planeadas": [
+    "svc-kpi",
+    "svc-validation",
+    "svc-budget",
+    "svc-runlog"
+   ],
+   "convocable_por": [],
+   "postura": "bloqueado",
+   "postura_texto": "levanta la mano",
+   "encargos": [
+    {
+     "id": "E-012",
+     "titulo": "Alcance del MVP del ERP para autorización de Dirección",
+     "agente": "D5-01",
+     "convocado_por": "Gabriel",
+     "estado": "bloqueado",
+     "descripcion": "Módulo: producto. Problema: hay que cerrar qué entra al MVP del ERP y qué se pospone. Restricción: el MVP tiene que cubrir la bandeja de HITL o la Fase 1 no arranca.",
+     "entregable_esperado": "Propuesta de alcance con opciones y su costo, para decisión de Gabriel.",
+     "depende_de": [
+      "E-001",
+      "E-002"
+     ],
+     "hitl": true,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-012"
+    },
+    {
+     "id": "E-001",
+     "titulo": "Requerimientos de la bandeja única de HITL",
+     "agente": "D5-01",
+     "convocado_por": "Gabriel",
+     "estado": "en_curso",
+     "descripcion": "Módulo: panel del ERP. Problema: las aprobaciones viven hoy en WhatsApp y correo, así que el Gate de Autoridad existe en el papel y no en la operación. Restricción: una sola bandeja, con trace_id, umbral disparado, resumen de una línea, entregable enlazado y SLA visible (§7.2).",
+     "entregable_esperado": "Lista de requerimientos con criterio de aceptación por cada uno.",
+     "depende_de": [],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-001"
+    }
+   ],
+   "abiertos": 2,
+   "memoria": {
+    "habilidades": [
+     "requerimiento",
+     "criterio_de_aceptacion",
+     "backlog_priorizado",
+     "encargo_a_consultor"
+    ],
+    "notas": [
+     {
+      "fecha": "2026-08-18",
+      "encargo": "E-001",
+      "tipo": "decision",
+      "texto": "La bandeja de HITL no es un módulo más del ERP: es lo que bloquea la Fase 1 completa (§17.5). Si algo se pospone, no es esto."
+     }
+    ],
+    "total_notas": 1
+   }
+  },
+  {
+   "id": "D5-02",
+   "tipo": "dominio",
+   "nombre": "Paula",
+   "puesto": "Datos e Insights",
+   "lema": "Sin svc-trace no hay cifra, hay opinión con decimales.",
+   "voz": "Cruza datos y reconcilia contra el origen. Todavía no tiene de dónde leer.",
+   "mision": "Convertir los datos del ERP en insights verificables, siempre con la cifra reconciliada contra su origen. Los dashboards son Metabase sobre svc-kpi, no este agente (§4.1).",
+   "estado": "planned",
+   "disponible": false,
+   "zona": "datos",
+   "escritorio": {
+    "x": 11,
+    "y": 6
+   },
+   "sprite": {
+    "piel": "#a86b45",
+    "pelo": "#402218",
+    "ropa": "#8a4f7d",
+    "acento": "#f5c2e7",
+    "estilo": "largo"
+   },
+   "habilidades": [
+    "insight",
+    "reporte",
+    "hallazgo"
+   ],
+   "no_hace": [
+    "no calcula kpis sin svc trace",
+    "no modifica datos crudos",
+    "no publica cifra sin fuente"
+   ],
+   "acciones": [],
+   "herramientas": [],
+   "herramientas_planeadas": [
+    "svc-kpi",
+    "svc-trace",
+    "svc-alerts",
+    "svc-audit"
+   ],
+   "convocable_por": [],
+   "postura": "vacante",
+   "postura_texto": "silla vacia",
+   "encargos": [],
+   "abiertos": 0,
+   "memoria": {
+    "habilidades": [
+     "insight",
+     "reporte",
+     "hallazgo"
+    ],
+    "notas": [],
+    "total_notas": 0
+   }
+  },
+  {
+   "id": "D5-03",
+   "tipo": "dominio",
+   "nombre": "Aurora",
+   "puesto": "AgentOps: Arquitectura y Calidad de Agentes",
+   "lema": "Un agente que nadie evalúa se degrada en silencio.",
+   "voz": "Mira la bitácora de todos: calidad de entregables, costo por invocación y deriva.",
+   "mision": "Vigilar la calidad del conjunto de agentes: prompts versionados, entregables que cumplen el contrato de §7.1, costo por invocación y deriva. Es el consumidor principal de la bitácora.",
+   "estado": "built",
+   "disponible": true,
+   "zona": "agentops",
+   "escritorio": {
+    "x": 13,
+    "y": 3
+   },
+   "sprite": {
+    "piel": "#8d5a3b",
+    "pelo": "#c0c0c0",
+    "ropa": "#33415c",
+    "acento": "#7ee787",
+    "estilo": "chongo"
+   },
+   "habilidades": [
+    "evaluacion_de_calidad",
+    "hallazgo_de_deriva",
+    "propuesta_de_prompt",
+    "reporte_de_costo"
+   ],
+   "no_hace": [
+    "no concede act por si solo",
+    "no reemplaza auditoria humana",
+    "no edita entregables ajenos",
+    "no evalua sin muestra registrada"
+   ],
+   "acciones": [],
+   "herramientas": [
+    "office-bitacora"
+   ],
+   "herramientas_planeadas": [
+    "svc-validation",
+    "svc-trace",
+    "svc-runlog",
+    "svc-budget",
+    "svc-privacy",
+    "svc-rbac"
+   ],
+   "convocable_por": [],
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
+   "encargos": [
+    {
+     "id": "E-011",
+     "titulo": "Evaluación de calidad de los primeros entregables de consultoría",
+     "agente": "D5-03",
+     "convocado_por": "Gabriel",
+     "estado": "pendiente",
+     "descripcion": "Módulo: AgentOps. Problema: con doce agentes disponibles la calidad ya no se vigila a mano (§15). Restricción: se evalúa sobre muestra registrada en bitácora, no de memoria.",
+     "entregable_esperado": "Rúbrica de evaluación aplicada a una muestra, con hallazgos de deriva y costo.",
+     "depende_de": [
+      "E-002"
+     ],
+     "hitl": false,
+     "creado": "2026-08-18",
+     "actualizado": "2026-08-18",
+     "trace_id": "TR-20260818-011"
+    }
+   ],
+   "abiertos": 1,
+   "memoria": {
+    "habilidades": [
+     "evaluacion_de_calidad",
+     "hallazgo_de_deriva",
+     "propuesta_de_prompt",
+     "reporte_de_costo"
+    ],
+    "notas": [
+     {
+      "fecha": "2026-08-18",
+      "encargo": "E-011",
+      "tipo": "contexto",
+      "texto": "Con 12 agentes disponibles ya se cruzó el umbral de ~8 que la arquitectura pone para encender AgentOps. La primera evaluación sale sobre los entregables del ERP."
+     }
+    ],
+    "total_notas": 1
+   }
+  }
+ ],
+ "encargos": [
+  {
+   "id": "E-001",
+   "titulo": "Requerimientos de la bandeja única de HITL",
+   "agente": "D5-01",
+   "convocado_por": "Gabriel",
+   "estado": "en_curso",
+   "descripcion": "Módulo: panel del ERP. Problema: las aprobaciones viven hoy en WhatsApp y correo, así que el Gate de Autoridad existe en el papel y no en la operación. Restricción: una sola bandeja, con trace_id, umbral disparado, resumen de una línea, entregable enlazado y SLA visible (§7.2).",
+   "entregable_esperado": "Lista de requerimientos con criterio de aceptación por cada uno.",
+   "depende_de": [],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-001"
+  },
+  {
+   "id": "E-002",
+   "titulo": "Esquema de datos v1 del ERP",
+   "agente": "C-04",
+   "convocado_por": "D5-01",
+   "estado": "en_curso",
+   "descripcion": "Módulo: base de datos. Problema: el catálogo vive en CSV y no aguanta la bandeja de HITL ni el histórico de viajes. Restricción: tiene que recibir sin pérdida lo que hoy produce svc-masterdata, y versionar la tabla de tarifas con su vigencia.",
+   "entregable_esperado": "Esquema, relaciones, migraciones iniciales y diccionario de datos.",
+   "depende_de": [
+    "E-001"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-002"
+  },
+  {
+   "id": "E-003",
+   "titulo": "Servicios y reglas de negocio del módulo HITL",
+   "agente": "C-03",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: backend. Problema: falta el flujo aprobar/rechazar/expirar con su regla de timeout (§7.3). Restricción: el timeout no puede interpretarse como aprobación, nunca.",
+   "entregable_esperado": "Diseño de servicios, máquina de estados y manejo de errores.",
+   "depende_de": [
+    "E-002"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-003"
+  },
+  {
+   "id": "E-004",
+   "titulo": "Flujo de pantalla de la bandeja",
+   "agente": "C-01",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: producto/UX. Problema: quien aprueba necesita decidir en segundos y hoy no ve el SLA. Restricción: el owner del equipo es quien recibe; el orden lo manda el vencimiento.",
+   "entregable_esperado": "Dos flujos alternativos con wireframes y su comparación.",
+   "depende_de": [
+    "E-001"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-004"
+  },
+  {
+   "id": "E-005",
+   "titulo": "Componentes y design system del panel",
+   "agente": "C-02",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: frontend. Problema: sin sistema de componentes cada pantalla del ERP inventará el suyo. Restricción: se construye una sola vez y sirve para los módulos que siguen.",
+   "entregable_esperado": "Inventario de componentes, tokens y guía de uso.",
+   "depende_de": [
+    "E-004"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-005"
+  },
+  {
+   "id": "E-006",
+   "titulo": "Integraciones del ERP: Airtable, GPS y banca",
+   "agente": "C-05",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: integraciones. Problema: la bandeja vive hoy en Airtable y los datos de operación llegan de GPS y banca por archivo. Restricción: idempotencia y reintentos; el sistema del otro va a fallar.",
+   "entregable_esperado": "Contratos de endpoint, webhooks y política de reintento.",
+   "depende_de": [
+    "E-002"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-006"
+  },
+  {
+   "id": "E-007",
+   "titulo": "Matriz de roles y accesos del ERP",
+   "agente": "C-06",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: seguridad. Problema: no hay matriz de permisos y el ERP va a manejar datos de clientes y de operadores. Restricción: mínimo privilegio; precursor de svc-rbac (fase 6).",
+   "entregable_esperado": "Matriz de roles, revisión de superficie de ataque y plan de autenticación.",
+   "depende_de": [
+    "E-002"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-007"
+  },
+  {
+   "id": "E-008",
+   "titulo": "Criterios de aceptación y regresión del módulo HITL",
+   "agente": "C-07",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: QA. Problema: sin criterios verificables no se puede declarar el módulo terminado. Restricción: el caso de timeout y el de doble aprobación tienen que estar cubiertos.",
+   "entregable_esperado": "Casos de prueba, criterios de aceptación y plan de regresión.",
+   "depende_de": [
+    "E-003"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-008"
+  },
+  {
+   "id": "E-009",
+   "titulo": "Ambientes, despliegue y respaldo del ERP",
+   "agente": "C-08",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: DevOps. Problema: no hay ambientes ni plan de recuperación. Restricción: tiene que poder revertirse un despliegue malo sin perder la bandeja.",
+   "entregable_esperado": "Plan de ambientes, despliegue, monitoreo, respaldo y recuperación.",
+   "depende_de": [
+    "E-003"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-009"
+  },
+  {
+   "id": "E-010",
+   "titulo": "Diccionario de datos y guía de onboarding del ERP",
+   "agente": "C-09",
+   "convocado_por": "D5-01",
+   "estado": "pendiente",
+   "descripcion": "Módulo: documentación. Problema: lo que se decida aquí lo va a mantener alguien que no estuvo. Restricción: prosa corta, sin duplicar lo que ya dice la arquitectura.",
+   "entregable_esperado": "Diccionario de datos, changelog y guía de onboarding.",
+   "depende_de": [
+    "E-002",
+    "E-003"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-010"
+  },
+  {
+   "id": "E-011",
+   "titulo": "Evaluación de calidad de los primeros entregables de consultoría",
+   "agente": "D5-03",
+   "convocado_por": "Gabriel",
+   "estado": "pendiente",
+   "descripcion": "Módulo: AgentOps. Problema: con doce agentes disponibles la calidad ya no se vigila a mano (§15). Restricción: se evalúa sobre muestra registrada en bitácora, no de memoria.",
+   "entregable_esperado": "Rúbrica de evaluación aplicada a una muestra, con hallazgos de deriva y costo.",
+   "depende_de": [
+    "E-002"
+   ],
+   "hitl": false,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-011"
+  },
+  {
+   "id": "E-012",
+   "titulo": "Alcance del MVP del ERP para autorización de Dirección",
+   "agente": "D5-01",
+   "convocado_por": "Gabriel",
+   "estado": "bloqueado",
+   "descripcion": "Módulo: producto. Problema: hay que cerrar qué entra al MVP del ERP y qué se pospone. Restricción: el MVP tiene que cubrir la bandeja de HITL o la Fase 1 no arranca.",
+   "entregable_esperado": "Propuesta de alcance con opciones y su costo, para decisión de Gabriel.",
+   "depende_de": [
+    "E-001",
+    "E-002"
+   ],
+   "hitl": true,
+   "creado": "2026-08-18",
+   "actualizado": "2026-08-18",
+   "trace_id": "TR-20260818-012"
+  }
+ ],
+ "bitacora": [
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-016",
+   "evento": "nota",
+   "agente": "D5-03",
+   "encargo": "E-011",
+   "detalle": "[contexto] Con 12 agentes disponibles ya se cruzó el umbral de ~8 que la arquitectura pone para encender AgentOps. La primera evaluación sale sobre los entregables del ERP.",
+   "autor": "sistema"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-015",
+   "evento": "nota",
+   "agente": "C-04",
+   "encargo": "E-002",
+   "detalle": "[trampa] La tabla de tarifas necesita vigencia y versión, no sólo precio: es la tabla pre-aprobada que Gabriel actualiza cada mes y hay que poder reconstruir qué precio aplicaba en qué fecha.",
+   "autor": "sistema"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-014",
+   "evento": "nota",
+   "agente": "C-04",
+   "encargo": "E-002",
+   "detalle": "[decision] El catálogo de la Fase 0 ya define las cinco entidades maestras y sus llaves. El esquema del ERP las hereda en vez de reinventarlas; cambiar los nombres costaría migrar los CSV.",
+   "autor": "sistema"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-013",
+   "evento": "nota",
+   "agente": "D5-01",
+   "encargo": "E-001",
+   "detalle": "[decision] La bandeja de HITL no es un módulo más del ERP: es lo que bloquea la Fase 1 completa (§17.5). Si algo se pospone, no es esto.",
+   "autor": "sistema"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-012",
+   "evento": "bloqueo",
+   "agente": "D5-01",
+   "encargo": "E-012",
+   "detalle": "Espera decisión de alcance de Gabriel: es un CTL-HITL",
+   "autor": "Mateo"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-002",
+   "evento": "inicio",
+   "agente": "C-04",
+   "encargo": "E-002",
+   "detalle": "Esquema en revisión contra lo que produce svc-masterdata",
+   "autor": "Dalia"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-001",
+   "evento": "inicio",
+   "agente": "D5-01",
+   "encargo": "E-001",
+   "detalle": "Requerimientos en redacción con la operación real de Fleeter",
+   "autor": "Mateo"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-012",
+   "evento": "convocatoria",
+   "agente": "D5-01",
+   "encargo": "E-012",
+   "detalle": "Alcance del MVP del ERP para autorización de Dirección",
+   "autor": "Gabriel"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-011",
+   "evento": "convocatoria",
+   "agente": "D5-03",
+   "encargo": "E-011",
+   "detalle": "Evaluación de calidad de los primeros entregables de consultoría",
+   "autor": "Gabriel"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-010",
+   "evento": "convocatoria",
+   "agente": "C-09",
+   "encargo": "E-010",
+   "detalle": "Diccionario de datos y guía de onboarding del ERP",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-009",
+   "evento": "convocatoria",
+   "agente": "C-08",
+   "encargo": "E-009",
+   "detalle": "Ambientes, despliegue y respaldo del ERP",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-008",
+   "evento": "convocatoria",
+   "agente": "C-07",
+   "encargo": "E-008",
+   "detalle": "Criterios de aceptación y regresión del módulo HITL",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:31+00:00",
+   "trace_id": "TR-20260818-007",
+   "evento": "convocatoria",
+   "agente": "C-06",
+   "encargo": "E-007",
+   "detalle": "Matriz de roles y accesos del ERP",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:30+00:00",
+   "trace_id": "TR-20260818-006",
+   "evento": "convocatoria",
+   "agente": "C-05",
+   "encargo": "E-006",
+   "detalle": "Integraciones del ERP: Airtable, GPS y banca",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:30+00:00",
+   "trace_id": "TR-20260818-005",
+   "evento": "convocatoria",
+   "agente": "C-02",
+   "encargo": "E-005",
+   "detalle": "Componentes y design system del panel",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:30+00:00",
+   "trace_id": "TR-20260818-004",
+   "evento": "convocatoria",
+   "agente": "C-01",
+   "encargo": "E-004",
+   "detalle": "Flujo de pantalla de la bandeja",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:30+00:00",
+   "trace_id": "TR-20260818-003",
+   "evento": "convocatoria",
+   "agente": "C-03",
+   "encargo": "E-003",
+   "detalle": "Servicios y reglas de negocio del módulo HITL",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:30+00:00",
+   "trace_id": "TR-20260818-002",
+   "evento": "convocatoria",
+   "agente": "C-04",
+   "encargo": "E-002",
+   "detalle": "Esquema de datos v1 del ERP",
+   "autor": "D5-01"
+  },
+  {
+   "ts": "2026-08-18T13:40:30+00:00",
+   "trace_id": "TR-20260818-001",
+   "evento": "convocatoria",
+   "agente": "D5-01",
+   "encargo": "E-001",
+   "detalle": "Requerimientos de la bandeja única de HITL",
+   "autor": "Gabriel"
+  }
+ ],
+ "resumen": {
+  "agentes": 12,
+  "disponibles": 11,
+  "encargos": 12,
+  "abiertos": 12,
+  "bloqueados": 1,
+  "en_curso": 2,
+  "hechos": 0,
+  "avance_pct": 0
+ }
+};
+
+  /* ---------- escena ---------- */
+  const TILE = 24, COLS = 16, FILAS = 9;
+  const lienzo = document.getElementById("plano");
+  const ctx = lienzo.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const ESC = {
+    piso: "#6f5a44", pisoAlt: "#7a6349", muro: "#2f3a46", muroAlto: "#3b4854",
+    mesa: "#c2a06b", mesaBorde: "#8a6f45", metal: "#59616b", planta: "#4a7c52",
+    tinta: "#14171c", papel: "#e8e2d4",
+  };
+
+  const COLOR_ESTADO = {
+    bloqueado: "#ef6a5c", en_curso: "#5cc0dd", pendiente: "#f0a01e",
+    libre: "#5ec27f", vacante: "#7c8494",
+  };
+
+  const agentes = ESTADO.agentes || [];
+  let seleccionado = agentes.find(a => a.postura === "bloqueado") || agentes[0] || null;
+  let cuadro = 0;
+  let animando = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function px(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.round(x), Math.round(y), w, h);
+  }
+
+  function piso() {
+    for (let f = 0; f < FILAS; f++) {
+      for (let c = 0; c < COLS; c++) {
+        px(c * TILE, f * TILE, TILE, TILE, (c + f) % 2 ? ESC.piso : ESC.pisoAlt);
+        px(c * TILE, f * TILE, TILE, 1, "rgba(0,0,0,.10)");
+        px(c * TILE, f * TILE, 1, TILE, "rgba(0,0,0,.10)");
+      }
+    }
+    px(0, 0, COLS * TILE, 26, ESC.muro);
+    px(0, 24, COLS * TILE, 2, ESC.muroAlto);
+    // Ventanales del muro: la luz que entra es lo unico que separa manana de tarde.
+    for (let x = 12; x < 200; x += 46) {
+      px(x, 5, 30, 15, "#6d8ea8");
+      px(x, 5, 30, 3, "#89a9c0");
+      px(x, 5, 1, 15, ESC.muroAlto);
+    }
+    // Pizarron del backlog, en la zona de producto.
+    px(250, 4, 76, 18, ESC.papel);
+    px(250, 4, 76, 2, "#b9b09a");
+    // Renglones del backlog: anchos distintos para que se lea como lista escrita a mano.
+    for (let i = 0; i < 5; i++) px(254, 8 + i * 3, 26 + (i % 3) * 16, 1, "#7d7365");
+    px(300, 8, 22, 11, "#c9d8c2");   // columna "hecho"
+    // Rack de AgentOps.
+    px(344, 30, 26, 60, ESC.metal);
+    px(346, 32, 22, 56, "#414952");
+    for (let i = 0; i < 7; i++) {
+      px(348, 35 + i * 7, 18, 4, "#2d343c");
+      px(362, 36 + i * 7, 2, 2, i % 3 ? "#5ec27f" : "#f0a01e");
+    }
+  }
+
+  function planta(x, y) {
+    px(x + 2, y + 12, 8, 8, "#8a6f45");
+    px(x + 3, y + 13, 6, 6, "#a5854f");
+    px(x + 4, y + 4, 4, 9, "#3f6b46");
+    px(x + 1, y + 2, 4, 5, ESC.planta);
+    px(x + 7, y + 1, 4, 6, ESC.planta);
+    px(x + 3, y - 1, 5, 4, "#589a5f");
+  }
+
+  function escritorio(a) {
+    const x = a.escritorio.x * TILE, y = a.escritorio.y * TILE;
+    const color = COLOR_ESTADO[a.postura];
+    const activo = a.postura !== "vacante";
+
+    if (activo) {
+      ctx.fillStyle = "rgba(255,205,120,.13)";
+      ctx.beginPath();
+      ctx.ellipse(x + 12, y + 20, 20, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    px(x + 1, y + 12, 22, 10, ESC.mesa);
+    px(x + 1, y + 12, 22, 2, "#d6b782");
+    px(x + 1, y + 21, 22, 1, ESC.mesaBorde);
+    px(x + 3, y + 22, 2, 3, ESC.mesaBorde);
+    px(x + 19, y + 22, 2, 3, ESC.mesaBorde);
+
+    px(x + 7, y + 5, 11, 8, "#3a424c");     // monitor
+    px(x + 8, y + 6, 9, 6, activo ? color : "#232a31");
+    px(x + 11, y + 13, 3, 2, "#3a424c");
+    if (activo && animando && cuadro % 60 < 30) px(x + 9, y + 7, 5, 1, "rgba(255,255,255,.5)");
+
+    px(x + 19, y + 9, 3, 4, a.postura === "vacante" ? "#4a525c" : "#c86a4a"); // taza
+    return { x, y, color, activo };
+  }
+
+  function persona(a, base) {
+    const s = a.sprite || {};
+    const piel = s.piel || "#c98d63", pelo = s.pelo || "#2b1d12";
+    const ropa = s.ropa || "#3f7fbf", acento = s.acento || "#f0b429";
+    const x = base.x + 8;
+    let y = base.y + 22;
+
+    if (a.postura === "vacante") {
+      px(x + 1, y - 2, 10, 3, "#4a525c");   // silla sola
+      px(x + 4, y + 1, 4, 5, "#3d444d");
+      return;
+    }
+
+    const bob = animando && cuadro % 96 < 48 ? 0 : 1;
+    y += bob;
+
+    px(x + 1, y, 10, 9, ropa);              // torso
+    px(x + 1, y, 10, 2, acento);            // hombros / lanyard
+    px(x + 5, y + 2, 2, 5, acento);
+
+    const teclea = a.postura === "en_curso" && animando;
+    const golpe = teclea && cuadro % 24 < 12;
+    px(x - 1, y + (golpe ? 3 : 2), 2, 4, piel);          // brazo izq
+    px(x + 11, y + (golpe ? 2 : 3), 2, 4, piel);         // brazo der
+
+    if (a.postura === "bloqueado") {
+      px(x + 11, y - 5, 2, 7, piel);                      // mano levantada
+      const parpadeo = !animando || cuadro % 60 < 40;
+      if (parpadeo) {
+        px(x + 9, y - 15, 7, 9, "#ef6a5c");
+        px(x + 12, y - 13, 1, 4, "#ffffff");
+        px(x + 12, y - 8, 1, 1, "#ffffff");
+      }
+    }
+
+    px(x + 2, y - 7, 8, 8, piel);                          // cabeza
+    px(x + 4, y - 4, 1, 1, ESC.tinta);
+    px(x + 7, y - 4, 1, 1, ESC.tinta);
+
+    const estilo = s.estilo || "corto";
+    px(x + 2, y - 8, 8, 3, pelo);
+    if (estilo === "largo") { px(x + 1, y - 7, 1, 7, pelo); px(x + 10, y - 7, 1, 7, pelo); }
+    if (estilo === "chongo") { px(x + 4, y - 11, 4, 3, pelo); }
+    if (estilo === "gorra") { px(x + 1, y - 9, 10, 2, acento); px(x + 9, y - 7, 3, 1, acento); }
+  }
+
+  function etiqueta(a, base) {
+    const texto = a.nombre;
+    ctx.font = "600 8px Archivo, sans-serif";
+    const ancho = ctx.measureText(texto).width + 8;
+    const x = Math.max(2, Math.min(base.x + 12 - ancho / 2, COLS * TILE - ancho - 2));
+    const y = base.y - 6;
+    px(x, y, ancho, 11, "rgba(20,23,28,.88)");
+    px(x, y + 11, ancho, 1, base.color);
+    ctx.fillStyle = "#f2efe9";
+    ctx.textBaseline = "top";
+    ctx.fillText(texto, x + 4, y + 2);
+  }
+
+  const cajas = [];
+
+  function dibujar() {
+    ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+    piso();
+    planta(8, 40); planta(360, 180); planta(200, 190);
+    cajas.length = 0;
+
+    const ordenados = [...agentes].sort((a, b) => a.escritorio.y - b.escritorio.y);
+    for (const a of ordenados) {
+      const base = escritorio(a);
+      persona(a, base);
+      cajas.push({ a, x: base.x - 2, y: base.y - 8, w: TILE + 4, h: TILE + 12 });
+      if (seleccionado && a.id === seleccionado.id) {
+        ctx.strokeStyle = base.color;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(base.x - 1.5, base.y - 2.5, TILE + 3, TILE + 6);
+        etiqueta(a, base);
+      }
+    }
+  }
+
+  function bucle() {
+    cuadro++;
+    dibujar();
+    requestAnimationFrame(bucle);
+  }
+
+  lienzo.addEventListener("click", (evento) => {
+    const caja = lienzo.getBoundingClientRect();
+    const escala = caja.width / lienzo.width;
+    const px_ = (evento.clientX - caja.left) / escala;
+    const py_ = (evento.clientY - caja.top) / escala;
+    const golpe = cajas.find(c => px_ >= c.x && px_ <= c.x + c.w && py_ >= c.y && py_ <= c.y + c.h);
+    if (golpe) { seleccionado = golpe.a; pintarFicha(); }
+  });
+
+  document.getElementById("pausa").addEventListener("click", (evento) => {
+    animando = !animando;
+    evento.target.textContent = animando ? "Pausar animación" : "Reanudar animación";
+  });
+
+  /* ---------- interfaz ---------- */
+
+  const ESTADO_TEXTO = {
+    bloqueado: "bloqueado", en_curso: "en curso", pendiente: "pendiente",
+    libre: "disponible", vacante: "silla vacía", hecho: "hecho",
+  };
+
+  function el(tag, clase, texto) {
+    const nodo = document.createElement(tag);
+    if (clase) nodo.className = clase;
+    if (texto !== undefined) nodo.textContent = texto;
+    return nodo;
+  }
+
+  function pintarCifras() {
+    const r = ESTADO.resumen || {};
+    const caja = document.getElementById("cifras");
+    const datos = [
+      { valor: `${r.disponibles}/${r.agentes}`, etiqueta: "agentes listos", clase: "" },
+      { valor: r.en_curso, etiqueta: "en curso", clase: "curso" },
+      { valor: r.bloqueados, etiqueta: "esperan a un humano", clase: "alerta" },
+      { valor: `${r.avance_pct}%`, etiqueta: "avance del ERP", clase: "" },
+    ];
+    for (const d of datos) {
+      const nodo = el("div", `cifra ${d.clase}`);
+      nodo.append(el("b", null, String(d.valor)), el("span", null, d.etiqueta));
+      caja.append(nodo);
+    }
+  }
+
+  function bloque(titulo, hijos) {
+    const nodo = el("div", "bloque");
+    nodo.append(el("h4", null, titulo), ...hijos);
+    return nodo;
+  }
+
+  function pintarFicha() {
+    const caja = document.getElementById("ficha");
+    caja.replaceChildren();
+    const a = seleccionado;
+    if (!a) { caja.append(el("p", null, "Haz clic en un escritorio.")); return; }
+
+    document.getElementById("ficha-zona").textContent = (ESTADO.zonas[a.zona] || {}).nombre || a.zona;
+
+    const cabeza = el("div", "ficha-cabeza");
+    cabeza.append(el("h3", null, a.nombre), el("span", "id-chip", a.id));
+    caja.append(cabeza, el("p", "puesto", a.puesto));
+
+    const pill = el("span", `estado-pill e-${a.postura}`, a.postura_texto);
+    caja.append(pill);
+
+    if (a.lema) caja.append(el("p", "lema", a.lema));
+    if (a.voz) caja.append(bloque("Cómo trabaja", [el("p", null, a.voz)]));
+
+    if (a.habilidades && a.habilidades.length) {
+      const lista = el("ul");
+      for (const h of a.habilidades.slice(0, 6)) lista.append(el("li", null, h));
+      caja.append(bloque(a.tipo === "consultor" ? "Se le convoca para" : "Produce", [lista]));
+    }
+
+    const acciones = a.acciones && a.acciones.length
+      ? a.acciones.join(", ")
+      : "ninguna — produce texto y código, no ejecuta nada en la operación";
+    caja.append(bloque("Autoridad", [el("p", null, `ACT-*: ${acciones}`)]));
+
+    const abiertos = (a.encargos || []).filter(e => e.estado !== "hecho");
+    if (abiertos.length) {
+      const nodos = abiertos.map(e => {
+        const tarjeta = el("div", "encargo");
+        tarjeta.append(el("div", "encargo-titulo", e.titulo));
+        const meta = el("div", "encargo-meta");
+        meta.append(el("span", null, e.id), el("span", `e-${e.estado}`, ESTADO_TEXTO[e.estado]));
+        if (e.hitl) meta.append(el("span", "e-bloqueado", "requiere aprobación"));
+        meta.append(el("span", null, `convocó ${e.convocado_por}`));
+        tarjeta.append(meta);
+        return tarjeta;
+      });
+      caja.append(bloque(`Encargos abiertos (${abiertos.length})`, nodos));
+    }
+
+    const notas = (a.memoria || {}).notas || [];
+    if (notas.length) {
+      const nodos = notas.map(n => {
+        const nodo = el("div", "nota");
+        nodo.append(el("div", "nota-meta", `${n.fecha} · ${n.encargo} · ${n.tipo}`));
+        nodo.append(document.createTextNode(n.texto));
+        return nodo;
+      });
+      caja.append(bloque(`Memoria (${a.memoria.total_notas} notas)`, nodos));
+    } else {
+      caja.append(bloque("Memoria", [el("p", null, "Sin notas todavía. Escribe una con office.cli recordar.")]));
+    }
+  }
+
+  function pintarBitacora() {
+    const lista = document.getElementById("bitacora");
+    for (const e of ESTADO.bitacora || []) {
+      const fila = el("li");
+      const hora = el("time", null, e.ts.replace("T", " ").replace("+00:00", ""));
+      hora.dateTime = e.ts;
+      const nombre = (agentes.find(a => a.id === e.agente) || {}).nombre || e.agente;
+      fila.append(hora, el("span", "quien", `${nombre} · ${e.encargo}`), el("span", `evento ${e.evento}`, e.evento),
+        el("span", "detalle", e.detalle));
+      lista.append(fila);
+    }
+  }
+
+  document.getElementById("generado").textContent = (ESTADO.generado || "").replace("T", " ").replace("+00:00", " UTC");
+  pintarCifras();
+  pintarFicha();
+  pintarBitacora();
+  dibujar();
+  requestAnimationFrame(bucle);
+</script>

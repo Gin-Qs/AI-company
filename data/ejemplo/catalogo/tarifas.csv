@@ -1,0 +1,6 @@
+tarifa_id,route_id,cliente_id,tipo_unidad,precio_mxn,margen_minimo_pct,vigencia_desde,vigencia_hasta,version,autorizado_por
+TF-001,R-MTY-CDMX,,,26500,18,2026-01-01,,v3,Gabriel
+TF-002,R-MTY-CDMX,CL-03,,24800,15,2026-01-01,,v3,Gabriel
+TF-003,R-CDMX-GDL,,,15900,18,2026-01-01,,v3,Gabriel
+TF-004,R-GDL-MTY,,,22400,18,2026-01-01,,v3,Gabriel
+TF-005,R-MTY-SLT,,,3900,12,2026-01-01,,v3,Gabriel

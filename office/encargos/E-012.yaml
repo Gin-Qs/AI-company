@@ -1,0 +1,15 @@
+id: E-012
+titulo: Alcance del MVP del ERP para autorización de Dirección
+agente: D5-01
+convocado_por: Gabriel
+estado: bloqueado
+descripcion: 'Módulo: producto. Problema: hay que cerrar qué entra al MVP del ERP y qué se pospone. Restricción:
+  el MVP tiene que cubrir la bandeja de HITL o la Fase 1 no arranca.'
+entregable_esperado: Propuesta de alcance con opciones y su costo, para decisión de Gabriel.
+depende_de:
+- E-001
+- E-002
+hitl: true
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-012

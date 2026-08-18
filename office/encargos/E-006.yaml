@@ -1,0 +1,15 @@
+id: E-006
+titulo: 'Integraciones del ERP: Airtable, GPS y banca'
+agente: C-05
+convocado_por: D5-01
+estado: pendiente
+descripcion: 'Módulo: integraciones. Problema: la bandeja vive hoy en Airtable y los datos de operación
+  llegan de GPS y banca por archivo. Restricción: idempotencia y reintentos; el sistema del otro va a
+  fallar.'
+entregable_esperado: Contratos de endpoint, webhooks y política de reintento.
+depende_de:
+- E-002
+hitl: false
+creado: '2026-08-18'
+actualizado: '2026-08-18'
+trace_id: TR-20260818-006

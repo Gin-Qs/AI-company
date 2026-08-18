@@ -1,0 +1,8 @@
+# Parametros de empresa (svc-masterdata). Cifras de ejemplo, no de la operacion real.
+costos_fijos_mensuales_mxn: 380000
+base_asignacion_fijos: km
+km_mensuales_flota: 320000
+viajes_mensuales_flota: 85
+precio_diesel_mxn_litro: 25.80   # solo referencia: si hay tickets, manda el ticket
+moneda: MXN
+version: v1

@@ -1,0 +1,48 @@
+id: D5-03
+name: "AgentOps: Arquitectura y Calidad de Agentes"
+department: 05-tecnologia-datos-innovacion
+teams:
+  - T05-04
+mission: >
+  Vigilar la calidad del conjunto de agentes: prompts versionados, entregables que cumplen el
+  contrato de §7.1, costo por invocación y deriva. Es el consumidor principal de la bitácora.
+
+estado: built
+fase: 7
+adelantado_a: 0
+razon_adelanto: >
+  El propio §15 lo ordena: "D5-03 se adelanta en cuanto haya más de ~8 agentes activos: a partir
+  de ahí la calidad del conjunto deja de poder vigilarse a mano". Con 9 consultores más 3 agentes
+  de D5 disponibles, el umbral ya se cruzó.
+
+modo: proyecto
+model_tier: Alto
+absorbe: [A64, A65, A97, A98, A99]
+
+tools:
+  - office-bitacora        # precursor de svc-runlog mientras svc-runlog es fase 1
+tools_planeadas:
+  - svc-validation
+  - svc-trace
+  - svc-runlog
+  - svc-budget
+  - svc-privacy
+  - svc-rbac
+
+inputs: [bitacora, entregable, prompt_version, costo_por_invocacion]
+outputs: [evaluacion_de_calidad, hallazgo_de_deriva, propuesta_de_prompt, reporte_de_costo]
+
+actions: []
+controls:
+  - CTL-AUDIT
+  - CTL-POLICY
+
+limits:
+  - no_concede_act_por_si_solo          # §4.1 límite duro de D5-03
+  - no_reemplaza_auditoria_humana
+  - no_edita_entregables_ajenos
+  - no_evalua_sin_muestra_registrada
+
+prompt: agents/prompts/D5-03.md
+memoria: agents/memoria/D5-03.md
+prompt_version: v1.0.0

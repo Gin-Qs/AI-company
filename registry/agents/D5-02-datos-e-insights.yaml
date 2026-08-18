@@ -1,0 +1,37 @@
+id: D5-02
+name: Datos e Insights
+department: 05-tecnologia-datos-innovacion
+teams:
+  - T05-03
+mission: >
+  Convertir los datos del ERP en insights verificables, siempre con la cifra reconciliada
+  contra su origen. Los dashboards son Metabase sobre svc-kpi, no este agente (§4.1).
+
+# NO se adelanta, a diferencia de D5-01 y D5-03. Razón: todo lo que consume nace en la fase 3
+# (svc-kpi, svc-alerts) o después (svc-audit, fase 6), y no aporta nada a construir el ERP.
+# Adelantarlo sería encender un agente sin datos que leer.
+estado: planned
+fase: 7
+model_tier: Medio
+absorbe: [A61]
+
+tools: []
+tools_planeadas:
+  - svc-kpi
+  - svc-trace
+  - svc-alerts
+  - svc-audit
+
+inputs: [pregunta_de_negocio, periodo, dimension]
+outputs: [insight, reporte, hallazgo]
+
+actions: []
+controls:
+  - CTL-AUDIT
+
+limits:
+  - no_calcula_kpis_sin_svc_trace       # §4.1 límite duro de D5-02
+  - no_modifica_datos_crudos
+  - no_publica_cifra_sin_fuente
+
+prompt_version: v1.0.0

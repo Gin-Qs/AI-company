@@ -1,0 +1,43 @@
+team_id,departamento,equipo,cobertura,owner_digital,owner_humano,co_owners,base_organigrama
+T01-01,Dirección y Gobierno,Estrategia Corporativa,D1-01,D1-01,Gabriel,,Direccion/Estrategia [SOLO]
+T01-02,Dirección y Gobierno,Gobierno Corporativo y PMO,D1-02,D1-02,Gabriel,Ana; Nay,Gobierno de socios; Documentacion/Archivo compartida
+T01-03,Dirección y Gobierno,Inteligencia Ejecutiva y KPIs Globales,D1-03 + svc-kpi,D1-03,Gabriel,Nay; Ana,Nay aporta numeros; Ana reporta metricas operativas semanales
+T02-01,"Finanzas, Contabilidad y Administración",Planeación y Análisis Financiero,D2-02,D2-02,Nay,Gabriel,"Finanzas/Contabilidad [CON GABRIEL]: Nay registra, Gabriel interpreta"
+T02-02,"Finanzas, Contabilidad y Administración",Costos y Rentabilidad Logística,D2-03,D2-03,Nay,Gabriel,"Pricing/Planeacion: Nay recopila costo real, Gabriel decide"
+T02-03,"Finanzas, Contabilidad y Administración",Tesorería y Liquidez,D2-01 + svc-treasury,D2-01,Nay,Gabriel,"Tesoreria [CON GABRIEL]: Nay ejecuta, Gabriel aprueba >$20K"
+T02-04,"Finanzas, Contabilidad y Administración",Ciclo de Ingreso: Facturación y Cobranza,D2-04,D2-04,Nay,Ana; Gabriel,"Facturacion [CON GABRIEL]; Cobranza [CON ANA]: Nay administra, Ana la relacion"
+T02-05,"Finanzas, Contabilidad y Administración","Ciclo de Egreso: CXP, Compras y Proveedores",D2-05,D2-05,Nay,Elias,"Compras [CON ELIAS]: Elias identifica, Nay paga"
+T02-06,"Finanzas, Contabilidad y Administración","Contabilidad, Fiscal y Administración Documental",D2-06,D2-06,Nay,Gabriel,Contador externo coordina declaraciones con Nay
+T03-01,Operaciones Logísticas,"Planeación, Rutas y Programación",D3-01,D3-01,Elias,Ana; Gabriel,"Logistica/Coord. viajes: Elias ejecuta, Ana supervisa, Gabriel analiza"
+T03-02,Operaciones Logísticas,Tráfico y Dispatch,D3-02,D3-02,Elias,Ana,"Trafico [CON ANA]: Elias asigna, Ana valida prioridades"
+T03-03,Operaciones Logísticas,Torre de Control,D3-02 + svc-telemetry (el servicio corre 24/7; el agente sólo ante excepción),D3-02,Elias,Ana,Monitoreo GPS en tiempo real: Elias
+T03-04,Operaciones Logísticas,Incidencias y Eventos Críticos,D3-03,D3-03,Elias,Ana; Gabriel,Elias primer respondedor; escala a Ana; Gabriel en severidad alta
+T03-05,Operaciones Logísticas,"Flota, Mantenimiento y Combustible",D3-04,D3-04,Elias,Ana; Nay; Gabriel,Mantenimiento [SOLO Elias]; Arrendamiento [Gabriel+Ana+Nay]
+T03-06,Operaciones Logísticas,Evidencias y Cierre de Viaje,D3-05,D3-05,Elias,Ana; Gabriel,"Documentacion: Elias genera, Ana valida, Gabriel archiva lo legal"
+T03-07,Operaciones Logísticas,Seguridad Operativa y Riesgo en Ruta,D3-06,D3-06,Gabriel,Elias,"Seguridad y Calidad [CON ELIAS]: Gabriel disena, Elias implementa"
+T04-01,Comercial y Cliente,Prospección e Inteligencia Comercial,D4-01,D4-01,Elias,Ana,Prospeccion [SOLO-compartida]: Elias prospecta y califica
+T04-02,Comercial y Cliente,"CRM, Pipeline y Seguimiento",D4-02,D4-02,Elias,Ana,"Pipeline en Airtable: Elias registra, Ana da seguimiento a cierre"
+T04-03,Comercial y Cliente,"Pricing, Cotizaciones y Propuestas",D4-03,D4-03,Gabriel,Nay; Ana,Gabriel fija tarifa y margen minimo; Nay provee costo; Ana cotiza dentro de tabla
+T04-04,Comercial y Cliente,Atención y Customer Success,D4-04,D4-04,Ana,Gabriel,"Atencion [CON GABRIEL]: Ana contacto diario, Gabriel escalaciones"
+T04-05,Comercial y Cliente,"Marketing, Marca y Contenido",D4-05,D4-05,Gabriel,,Marketing/Comunicacion [SOLO]; coordina freelancer externo
+T05-01,"Tecnología, Datos e Innovación",Producto ERP y Requerimientos,D5-01,D5-01,Gabriel,,Tecnologia/Sistemas [SOLO]
+T05-02,"Tecnología, Datos e Innovación",Arquitectura Técnica y Desarrollo,Sin agente. Ingeniería humana asistida con Claude Code sobre el repo del ERP,humano,Gabriel,,Ingenieria humana asistida con Claude Code
+T05-03,"Tecnología, Datos e Innovación","Data, BI e Insights",D5-02 + Metabase,D5-02,Gabriel,Nay,Gabriel administra herramientas; Nay aporta datos financieros
+T05-04,"Tecnología, Datos e Innovación",AgentOps y Calidad IA,D5-03,D5-03,Gabriel,,Tecnologia/Sistemas [SOLO]
+T05-05,"Tecnología, Datos e Innovación",Automatización e Integraciones,Sin agente. n8n o Temporal,humano,Gabriel,,Automatizaciones sobre Airtable/GPS/TMS [SOLO]
+T05-06,"Tecnología, Datos e Innovación","IT, Seguridad y Continuidad",Sin agente. svc-rbac + herramientas estándar (§6.6),humano,Gabriel,,Tecnologia/Sistemas [SOLO]
+T06-01,"Legal, Compliance y Riesgos",Legal Corporativo y Contratos,D6-01,D6-01,Gabriel,,Legal [SOLO]; abogado externo como apoyo
+T06-02,"Legal, Compliance y Riesgos",Compliance y Permisos,D6-02,D6-02,Gabriel,,Permisos SCT/SICT [SOLO]
+T06-03,"Legal, Compliance y Riesgos",Riesgos Empresariales,D6-03,D6-03,Gabriel,,Gestion de riesgos [SOLO]
+T06-04,"Legal, Compliance y Riesgos",Seguros y Siniestros,D6-03,D6-03,Gabriel,,Seguros y siniestros [SOLO]
+T06-05,"Legal, Compliance y Riesgos",Auditoría Interna y Control,D6-04 + svc-audit,D6-04,Gabriel,Nay,Contador externo apoya la auditoria financiera
+T07-01,Talento y Cultura,Reclutamiento y Onboarding,D7-01,D7-01,Ana,Elias; Nay,"RRHH: Ana selecciona y evalua, Elias entrevista, Nay procesa"
+T07-02,Talento y Cultura,Expedientes Laborales,D7-01 + svc-privacy,D7-01,Nay,Elias,Nay gestiona expedientes; Elias los de operadores
+T07-03,Talento y Cultura,Nómina y Compensaciones,D7-02,D7-02,Nay,,Nomina / Seguridad social [SOLO]
+T07-04,Talento y Cultura,Capacitación y Manuales,D7-03,D7-03,Elias,,Capacitacion [SOLO]
+T07-05,Talento y Cultura,"Cultura, Clima y Desempeño",D7-03,D7-03,Ana,Gabriel,Ana evalua desempeno del equipo operativo
+T08-01,"Calidad, Procesos y Sostenibilidad",Procesos y SOPs,D8-01,D8-01,Gabriel,Ana; Elias,Documentacion/Archivo: Gabriel define que se documenta
+T08-02,"Calidad, Procesos y Sostenibilidad",Calidad Operativa,D8-01 + svc-validation,D8-01,Gabriel,Elias; Ana,"Seguridad y Calidad: Gabriel define SLAs, Elias audita en campo"
+T08-03,"Calidad, Procesos y Sostenibilidad",Mejora Continua,D8-01,D8-01,Gabriel,Elias,Revision mensual de incidencias y acciones correctivas
+T08-04,"Calidad, Procesos y Sostenibilidad",ESG y Sostenibilidad,D8-02 + svc-emissions,D8-02,Gabriel,,"Medio ambiente [SOLO]: verificacion vehicular, NOM-044"
+T08-05,"Calidad, Procesos y Sostenibilidad",Seguridad e Higiene,D8-02,D8-02,Gabriel,Elias,"Protocolos de seguridad: Gabriel disena, Elias implementa"
