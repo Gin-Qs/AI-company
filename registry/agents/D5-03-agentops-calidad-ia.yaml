@@ -20,12 +20,11 @@ model_tier: Alto
 absorbe: [A64, A65, A97, A98, A99]
 
 tools:
-  - office-bitacora        # precursor de svc-runlog mientras svc-runlog es fase 1
-tools_planeadas:
+  - svc-runlog          # construido en la Fase 1: ya no hace falta el precursor del office
   - svc-validation
   - svc-trace
-  - svc-runlog
   - svc-budget
+tools_planeadas:
   - svc-privacy
   - svc-rbac
 

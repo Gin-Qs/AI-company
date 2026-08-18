@@ -1,0 +1,37 @@
+id: svc-trace
+name: Reconciliacion de Cifras
+type: deterministic_python
+estado: built
+fase: 1
+owner_domain: [02-finanzas, 05-tecnologia-datos]
+modulo: services/trace
+
+# Responde "de donde salio este numero" y bloquea el entregable que no lo puede responder.
+# Distinto de svc-runlog a proposito: distinta pregunta, distinto consumidor, distinta retencion.
+consumidores: [svc-pricing, svc-validation, D4-03, D2-03, D1-03, D5-03]
+
+inputs:
+  - cifra
+  - servicio_origen
+  - consulta_origen
+  - version
+  - entregable
+outputs:
+  - libro_de_cifras
+  - reconciliacion
+  - discrepancias
+  - numeros_sin_respaldo
+
+tests:
+  - test_cifra_se_registra_con_su_origen
+  - test_discrepancia_contra_el_origen
+  - test_cifra_sin_fuente_declarada
+  - test_numero_inventado_en_prosa_se_detecta
+  - test_reconciliacion_bloquea_el_entregable
+  - test_numeros_en_texto_normaliza_formatos
+
+controls: [CTL-AUDIT]
+limits:
+  - no_corrige_cifras
+  - no_aproxima_para_que_cuadre
+version: v1.0.0

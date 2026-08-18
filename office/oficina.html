@@ -283,7 +283,31 @@
   .e-en_curso { color: var(--curso); }
   .e-pendiente { color: var(--senal); }
   .e-libre, .e-hecho { color: var(--ok); }
-  .e-vacante { color: var(--tenue); }
+  .e-vacante, .e-pausado { color: var(--tenue); }
+
+  .aviso-pausa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    padding: 11px 16px;
+    border: 1px solid var(--senal);
+    border-left-width: 3px;
+    border-radius: 3px;
+    background: var(--senal-fondo);
+    font-size: 13px;
+  }
+
+  .aviso-pausa b {
+    font-family: "Archivo", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--senal);
+  }
+
+  .aviso-pausa span { color: var(--ink-suave); }
 
   .encargo {
     border: 1px solid var(--linea);
@@ -400,6 +424,8 @@
     <div class="cifras" id="cifras"></div>
   </header>
 
+  <div id="aviso"></div>
+
   <div class="piso">
     <section class="tarjeta">
       <header>
@@ -440,7 +466,20 @@
 
 <script>
   const ESTADO = /*__ESTADO__*/{
- "generado": "2026-08-18T13:48:58+00:00",
+ "generado": "2026-08-18T15:47:16+00:00",
+ "pausa": {
+  "activa": true,
+  "desde": "2026-08-18",
+  "por": "Gabriel",
+  "motivo": "Sentar las bases antes de pulir la capa de agentes. La Fase 1 aporta los cinco servicios determinísticos que todo agente va a necesitar el primer día —trazabilidad de proceso, trazabilidad de cifras, validación, presupuesto y pricing—, y construirlos primero evita que los agentes se apoyen en muletas que después hay que quitar.\n",
+  "se_reanuda_cuando": "Los cinco servicios de la Fase 1 estén construidos y en verde, y la bitácora del office migre a svc-runlog. La capa de agentes se retoma con el gobierno ya puesto.\n",
+  "conserva": [
+   "Memorias en agents/memoria/: intactas y versionadas",
+   "Encargos abiertos en office/encargos/: se quedan en su estado, no se cancelan",
+   "Bitácora: append-only, no se reescribe",
+   "Registro: los agentes siguen declarados, con su fase y su razón de adelanto"
+  ]
+ },
  "zonas": {
   "consultoria": {
    "nombre": "Sala de proyecto",
@@ -498,8 +537,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-004",
@@ -566,8 +605,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-005",
@@ -635,8 +674,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-003",
@@ -704,8 +743,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "en_curso",
-   "postura_texto": "tecleando",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-002",
@@ -786,8 +825,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-006",
@@ -855,8 +894,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-007",
@@ -923,8 +962,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-008",
@@ -992,8 +1031,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-009",
@@ -1060,8 +1099,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-010",
@@ -1128,17 +1167,17 @@
    ],
    "acciones": [],
    "herramientas": [
-    "svc-masterdata"
-   ],
-   "herramientas_planeadas": [
-    "svc-kpi",
+    "svc-masterdata",
     "svc-validation",
     "svc-budget",
     "svc-runlog"
    ],
+   "herramientas_planeadas": [
+    "svc-kpi"
+   ],
    "convocable_por": [],
-   "postura": "bloqueado",
-   "postura_texto": "levanta la mano",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-012",
@@ -1224,10 +1263,11 @@
     "no publica cifra sin fuente"
    ],
    "acciones": [],
-   "herramientas": [],
+   "herramientas": [
+    "svc-trace"
+   ],
    "herramientas_planeadas": [
     "svc-kpi",
-    "svc-trace",
     "svc-alerts",
     "svc-audit"
    ],
@@ -1282,19 +1322,18 @@
    ],
    "acciones": [],
    "herramientas": [
-    "office-bitacora"
-   ],
-   "herramientas_planeadas": [
+    "svc-runlog",
     "svc-validation",
     "svc-trace",
-    "svc-runlog",
-    "svc-budget",
+    "svc-budget"
+   ],
+   "herramientas_planeadas": [
     "svc-privacy",
     "svc-rbac"
    ],
    "convocable_por": [],
-   "postura": "pendiente",
-   "postura_texto": "leyendo el encargo",
+   "postura": "pausado",
+   "postura_texto": "en pausa",
    "encargos": [
     {
      "id": "E-011",
@@ -1529,6 +1568,15 @@
  ],
  "bitacora": [
   {
+   "ts": "2026-08-18T15:30:08+00:00",
+   "trace_id": "TR-20260818-017",
+   "evento": "pausa",
+   "agente": "oficina",
+   "encargo": "-",
+   "detalle": "Sentar las bases antes de pulir la capa de agentes. La Fase 1 aporta los cinco servicios determinísticos que todo agente va a necesitar el primer día —trazabilidad de pro",
+   "autor": "Gabriel"
+  },
+  {
    "ts": "2026-08-18T13:40:31+00:00",
    "trace_id": "TR-20260818-016",
    "evento": "nota",
@@ -1726,7 +1774,7 @@
 
   const COLOR_ESTADO = {
     bloqueado: "#ef6a5c", en_curso: "#5cc0dd", pendiente: "#f0a01e",
-    libre: "#5ec27f", vacante: "#7c8494",
+    libre: "#5ec27f", vacante: "#7c8494", pausado: "#8d93a1",
   };
 
   const agentes = ESTADO.agentes || [];
@@ -1782,7 +1830,7 @@
   function escritorio(a) {
     const x = a.escritorio.x * TILE, y = a.escritorio.y * TILE;
     const color = COLOR_ESTADO[a.postura];
-    const activo = a.postura !== "vacante";
+    const activo = a.postura !== "vacante" && a.postura !== "pausado";
 
     if (activo) {
       ctx.fillStyle = "rgba(255,205,120,.13)";
@@ -1911,8 +1959,19 @@
 
   const ESTADO_TEXTO = {
     bloqueado: "bloqueado", en_curso: "en curso", pendiente: "pendiente",
-    libre: "disponible", vacante: "silla vacía", hecho: "hecho",
+    libre: "disponible", vacante: "silla vacía", hecho: "hecho", pausado: "en pausa",
   };
+
+  function pintarPausa() {
+    const pausa = ESTADO.pausa || {};
+    if (!pausa.activa) return;
+    const aviso = el("div", "aviso-pausa");
+    aviso.append(el("b", null, "Oficina en pausa"));
+    aviso.append(el("span", null, `desde el ${pausa.desde} por ${pausa.por}.`));
+    aviso.append(el("span", null, (pausa.motivo || "").trim()));
+    aviso.append(el("span", null, `Se reanuda cuando: ${(pausa.se_reanuda_cuando || "").trim()}`));
+    document.getElementById("aviso").append(aviso);
+  }
 
   function el(tag, clase, texto) {
     const nodo = document.createElement(tag);
@@ -2015,6 +2074,7 @@
   }
 
   document.getElementById("generado").textContent = (ESTADO.generado || "").replace("T", " ").replace("+00:00", " UTC");
+  pintarPausa();
   pintarCifras();
   pintarFicha();
   pintarBitacora();

@@ -20,6 +20,7 @@ from pathlib import Path
 from agents import memoria as memoria_mod
 from agents.perfiles import Perfil, cargar_perfiles, perfil
 from office import bitacora
+from office.estado import leer_pausa
 from office.encargos import Encargo, cargar as cargar_encargo, crear as crear_encargo
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -39,6 +40,10 @@ class AgenteNoDisponible(RuntimeError):
     """El agente existe en el registro pero su fase no llego."""
 
 
+class OficinaEnPausa(RuntimeError):
+    """La oficina esta detenida por decision escrita en office/pausa.yaml."""
+
+
 def convocar(
     agente_id: str,
     *,
@@ -50,6 +55,13 @@ def convocar(
     hitl: bool = False,
 ) -> Encargo:
     """Abre un encargo con todas las reglas aplicadas. Devuelve el encargo ya registrado."""
+    pausa = leer_pausa()
+    if pausa.get("activa"):
+        raise OficinaEnPausa(
+            f"la oficina esta en pausa desde {pausa.get('desde')} por {pausa.get('por')}. "
+            f"Se reanuda cuando: {' '.join(str(pausa.get('se_reanuda_cuando', '')).split())}"
+        )
+
     quien = perfil(agente_id)
 
     if not quien.disponible:

@@ -53,6 +53,8 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
 - [docs/umbrales.md](docs/umbrales.md) — estado de calibración del Gate de Autoridad.
 - [docs/fase-0.md](docs/fase-0.md) — **la Fase 0 construida**: cómo se corre, qué datos espera,
   la fórmula de costeo y el requisito de salida hacia la Fase 1.
+- [docs/fase-1.md](docs/fase-1.md) — **las bases de la Fase 1**: trazabilidad, validación,
+  presupuesto y el gate de cotización.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
 
@@ -75,8 +77,8 @@ corregidos. Detalle en [§17](docs/arquitectura-v3.md#17-estado-de-cierre-de-la-
 
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
-.venv/Scripts/python -m services.cli --datos data/ejemplo    # costo por km y margen real
-.venv/Scripts/python -m pytest                               # 63 pruebas
+.venv/Scripts/python -m services.cli fase0 --datos data/ejemplo   # costo por km y margen real
+.venv/Scripts/python -m pytest                                    # 156 pruebas
 .venv/Scripts/python scripts/validate_registry.py --verbose  # §10.3
 ```
 
@@ -84,17 +86,33 @@ Detalle y requisito de salida hacia la Fase 1 en [docs/fase-0.md](docs/fase-0.md
 arranca hasta calibrar margen objetivo y mínimo por ruta con la distribución real que produce
 `svc-profitability` ([umbrales.md](docs/umbrales.md)).
 
-**La oficina virtual está abierta.** Doce puestos listos para construir el ERP: los nueve
-consultores `C-01`…`C-09` más `D5-01` (Producto ERP) y `D5-03` (AgentOps), cada uno con nombre,
-memoria persistente y **cero `ACT-*`** — no pueden tocar la operación, sólo producir texto y
-código.
+**Las bases de la Fase 1 están construidas.** Cinco servicios más, todavía sin encender
+ningún agente:
+
+| | |
+|---|---|
+| `svc-runlog` | Registro append-only del camino y el progreso de cada caso, con SLA en horas hábiles |
+| `svc-trace` | Cada cifra con su origen; bloquea el entregable que cita un número sin respaldo |
+| `svc-validation` | Los seis campos del contrato de entregable y las reglas de dominio |
+| `svc-budget` | Tope mensual por agente, alerta al 80%, corte duro al 100% |
+| `svc-pricing` | Precio contra la tabla pre-aprobada, con el gate de margen mínimo |
 
 ```bash
-python -m office.cli estado      # quién está haciendo qué
+python -m services.cli cotizar --ruta R-MTY-CDMX --unidad U-101 --cliente CL-01 --operador OP-01
+```
+
+Una cotización bajo el margen mínimo **no se genera**: no depende de que el modelo lo note.
+Detalle y condiciones de encendido de `D4-03` y `D2-03` en [docs/fase-1.md](docs/fase-1.md).
+
+**La oficina virtual está en pausa**, por decisión escrita en
+[office/pausa.yaml](office/pausa.yaml): primero las bases, después se pulen los agentes. Los doce
+puestos siguen declarados y sus memorias intactas; el runtime rechaza toda convocatoria mientras
+la pausa esté activa.
+
+```bash
+python -m office.cli estado      # quién está haciendo qué (hoy: nadie, hay pausa)
 python -m office.cli build       # regenera office/oficina.html
 start office/oficina.html        # el plano en píxeles (macOS/Linux: open)
 ```
 
-El plano no es una animación: quien teclea tiene un encargo `en_curso`, quien levanta la mano
-espera una aprobación humana, y la silla vacía es un agente cuya fase no ha llegado. Detalle en
-[docs/oficina-virtual.md](docs/oficina-virtual.md).
+Detalle en [docs/oficina-virtual.md](docs/oficina-virtual.md).

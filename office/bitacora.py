@@ -25,6 +25,8 @@ EVENTOS = (
     "cierre",
     "nota",           # el agente anota en su memoria
     "evaluacion",     # D5-03 revisa calidad
+    "pausa",          # la oficina se detiene por decision escrita
+    "reanudacion",
 )
 
 

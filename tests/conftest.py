@@ -38,10 +38,15 @@ def oficina_temporal(tmp_path, monkeypatch):
     from office import bitacora
     from office import encargos as encargos_mod
 
+    from office import estado as estado_mod
+
     monkeypatch.setattr(encargos_mod, "DIRECTORIO", tmp_path / "encargos")
     monkeypatch.setattr(bitacora, "ARCHIVO", tmp_path / "bitacora.jsonl")
     monkeypatch.setattr(memoria_mod, "DIRECTORIO", tmp_path / "memoria")
     monkeypatch.setattr(runtime, "DIR_PROMPTS", tmp_path / "prompts")
+    # La pausa es estado real de la oficina. Las pruebas del flujo corren sobre una oficina
+    # abierta; que la pausa detiene las convocatorias lo cubre su propio test.
+    monkeypatch.setattr(estado_mod, "PAUSA", tmp_path / "sin-pausa.yaml")
     (tmp_path / "memoria").mkdir()
     return tmp_path
 
