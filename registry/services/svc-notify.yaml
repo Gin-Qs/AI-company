@@ -1,0 +1,42 @@
+id: svc-notify
+name: Avisos por Plantilla Fija
+type: deterministic_python
+estado: planned
+fase: 2
+owner_domain: [03-operaciones, 04-comercial-cliente]
+modulo: services/notify           # se crea al construir la fase
+
+# Plantillas fijas con variables validadas, sin LLM en el camino. Esa propiedad es lo que
+# permite que un aviso a cliente NO sea CTL-HITL (§11.4): el texto ya lo aprobó una persona
+# una vez, y el sistema sólo rellena huecos que valida antes de mandar.
+consumidores: [D2-04, D3-02, D3-03, D4-02, D4-04]
+
+inputs:
+  - plantilla_id
+  - variables
+  - destinatario
+  - canal
+outputs:
+  - mensaje_renderizado
+  - envio_registrado
+  - rechazo_por_variable_invalida
+
+tests:
+  - test_plantilla_fija_no_pasa_por_llm
+  - test_variable_faltante_no_se_envia
+  - test_variable_con_tipo_invalido_se_rechaza
+  - test_plantilla_desconocida_se_rechaza
+  - test_envio_queda_en_svc_runlog
+
+controls: [CTL-AUDIT, CTL-LIMIT, CTL-PRIVACY]
+limits:
+  - no_genera_texto_libre
+  - no_envia_a_destinatario_fuera_del_maestro
+  - no_reintenta_sin_limite
+version: v0.1.0-contrato
+
+decisiones_pendientes:
+  - "Qué plantillas existen y quién las aprueba. Una plantilla es un texto que sale a nombre
+     de la empresa: entra al repositorio versionada, no se edita en caliente"
+  - "Canal real de salida (WhatsApp Business, correo) y qué pasa cuando el proveedor falla"
+  - "Qué datos personales viajan en las variables — CTL-PRIVACY aplica desde el día uno"

@@ -142,3 +142,9 @@ comandos ya aplica el gate completo y deja el rastro.
   pausa de la oficina. El registro vive en `data/runlog/`, que está en `.gitignore`: la bitácora
   de la oficina dejó de versionarse en git a partir de la migración. Ver
   [oficina-virtual.md](oficina-virtual.md).
+
+## Qué sigue
+
+La Fase 2 ya está preparada —contratos, orden de construcción y decisiones pendientes— y no
+arranca hasta que estos dos agentes estén encendidos y hayan llevado casos reales de punta a
+punta. Ver [fase-2.md](fase-2.md).

@@ -55,6 +55,8 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
   la fórmula de costeo y el requisito de salida hacia la Fase 1.
 - [docs/fase-1.md](docs/fase-1.md) — **la Fase 1 construida**: trazabilidad, validación,
   presupuesto, el gate de cotización y los dos primeros agentes de operación.
+- [docs/fase-2.md](docs/fase-2.md) — **la Fase 2 preparada**: contratos, orden de construcción,
+  condiciones de entrada y las decisiones que faltan, con dueño.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
 
@@ -78,7 +80,7 @@ corregidos. Detalle en [§17](docs/arquitectura-v3.md#17-estado-de-cierre-de-la-
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
 .venv/Scripts/python -m services.cli fase0 --datos data/ejemplo   # costo por km y margen real
-.venv/Scripts/python -m pytest                                    # 172 pruebas
+.venv/Scripts/python -m pytest                                    # 177 pruebas
 .venv/Scripts/python scripts/validate_registry.py --verbose  # §10.3
 ```
 
@@ -124,6 +126,22 @@ viejo:
 ```bash
 python scripts/migrar_bitacora.py    # idempotente; el JSONL original no se toca
 ```
+
+**La Fase 2 está preparada, no construida.** Cinco servicios y dos agentes declarados en el
+registro —con sus pruebas, sus límites y lo que falta decidir— y cero código nuevo:
+
+| | |
+|---|---|
+| `svc-doc-checklist` | Si el expediente del viaje está completo. Sin él no hay factura |
+| `svc-invoicing` | El comprobante y su timbrado, que es `ACT-DOC-S`: HITL siempre |
+| `svc-cfdi-validate` | XSD y reglas del SAT. "Un LLM aquí sólo añade riesgo" (§6.2) |
+| `svc-ar` | Aging, prioridad de cobranza y flujo esperado |
+| `svc-notify` | Plantillas fijas con variables validadas, sin LLM en el camino |
+| `D3-05` · `D2-04` | Evidencias y Cierre · Ciclo de Ingreso. Declarados, `planned` |
+
+Un servicio `planned` **declara sus pruebas antes de existir**: esos nombres son su criterio de
+aceptación, y el validador los reporta como pendientes hasta que el servicio pase a `built`.
+Qué falta decidir y quién lo decide, en [docs/fase-2.md](docs/fase-2.md).
 
 ```bash
 python -m office.cli estado      # quién está haciendo qué, y quién está listo sin encender

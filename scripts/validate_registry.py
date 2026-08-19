@@ -38,6 +38,10 @@ class Resultado:
     numero: str
     descripcion: str
     fallas: list[str] = field(default_factory=list)
+    # Lo que la regla comprueba y todavia no aplica: ni verde ni rojo. Un pendiente no
+    # reprueba la regla, pero se imprime, porque una lista de pendientes invisible es una
+    # lista que crece sin que nadie la mire.
+    pendientes: list[str] = field(default_factory=list)
     omitida: str = ""
 
     @property
@@ -227,15 +231,27 @@ def regla_7(reg: Registro) -> Resultado:
 
 
 def regla_7b(reg: Registro) -> Resultado:
-    r = Resultado("7b", "Todo test declarado por un servicio existe en tests/")
+    """Un servicio `built` prueba lo que declara. Uno `planned` declara lo que va a probar.
+
+    La distincion importa para poder preparar una fase sin construirla: los contratos de la
+    Fase 2 declaran sus pruebas antes de que exista una linea de codigo, y esos nombres son el
+    criterio de aceptacion del servicio, no una promesa vaga. Lo que no se permite es que un
+    servicio pase a `built` con pruebas declaradas que nadie escribio: ahi la regla falla.
+    """
+    r = Resultado("7b", "Todo test declarado por un servicio built existe en tests/")
     if not (reg.raiz / "tests").is_dir():
         r.omitida = "no hay directorio tests/"
         return r
     existentes = _nombres_de_tests(reg.raiz)
     for servicio_id, servicio in reg.servicios.items():
+        construido = str(servicio.get("estado")) == "built"
         for test in _lista(servicio.get("tests")):
-            if str(test) not in existentes:
-                r.fallas.append(f"{servicio_id} declara {test}, que no existe en tests/")
+            if str(test) in existentes:
+                continue
+            if construido:
+                r.fallas.append(f"{servicio_id} esta built y declara {test}, que no existe en tests/")
+            else:
+                r.pendientes.append(f"{servicio_id} ({servicio.get('estado')}) declara {test}, aun sin escribir")
     return r
 
 
@@ -451,15 +467,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[{resultado.estado:^7}] regla {resultado.numero:<3} {resultado.descripcion}")
         for falla in resultado.fallas:
             print(f"            - {falla}")
+        if args.verbose:
+            for pendiente in resultado.pendientes:
+                print(f"            . pendiente: {pendiente}")
         if resultado.omitida and args.verbose:
             print(f"            motivo: {resultado.omitida}")
 
     fallidas = [r for r in resultados if r.fallas]
     omitidas = [r for r in resultados if r.omitida]
+    pendientes = sum(len(r.pendientes) for r in resultados)
     print("-" * 78)
     print(
         f"{len(resultados) - len(fallidas) - len(omitidas)} en verde, "
         f"{len(fallidas)} en falla, {len(omitidas)} omitidas"
+        + (f", {pendientes} pendientes de fases futuras" if pendientes else "")
     )
     return 1 if fallidas else 0
 
