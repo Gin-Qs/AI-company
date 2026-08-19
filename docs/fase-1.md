@@ -1,11 +1,13 @@
 # Fase 1 — Cotizar sin perder margen
 
-**Cinco servicios determinísticos. Cero agentes encendidos.** Estado: las bases construidas.
+**Cinco servicios determinísticos y dos agentes declarados. Cero agentes encendidos.**
+Estado: construida, a la espera de sus condiciones de encendido.
 
-La fase completa son cinco servicios más dos agentes (`D4-03` Pricing y `D2-03` Costos). Aquí
-están los cinco servicios. **Los agentes no se encienden todavía**, y no por prudencia genérica:
-les faltan dos condiciones de entrada que el §17.5 pone por escrito —margen objetivo y mínimo por
-ruta calibrados, y la bandeja de HITL en producción.
+La fase completa son cinco servicios más dos agentes (`D4-03` Pricing y `D2-03` Costos). Los
+cinco servicios están construidos y en verde. Los dos agentes están **declarados enteros y
+apagados** —estado `listo`—: contrato, prompt, memoria, escritorio y límites. **No se encienden
+todavía**, y no por prudencia genérica: les faltan condiciones de entrada que el §17.5 pone por
+escrito, y que ahora viven en el registro de cada agente en vez de en un documento.
 
 | Servicio | Módulo | Contrato | Qué resuelve |
 |---|---|---|---|
@@ -92,13 +94,36 @@ Está probado de punta a punta en
 [tests/integration/test_flujo_fase1.py](../tests/integration/test_flujo_fase1.py), incluido el
 camino en que el gate bloquea y el caso queda esperando a Dirección.
 
+## Los dos agentes: declarados, apagados y verificables
+
+| | `D4-03` Pricing y Propuestas | `D2-03` Costos y Márgenes |
+|---|---|---|
+| Contrato | [yaml](../registry/agents/D4-03-pricing-y-propuestas.yaml) | [yaml](../registry/agents/D2-03-costos-y-margenes.yaml) |
+| Quién es en la oficina | Ivana | Rubén |
+| Qué produce | cotización, propuesta, correo sugerido | análisis de margen, costo por km explicado, desviaciones |
+| `ACT-*` | `ACT-EMAIL-S`, declarada y no otorgada | ninguno |
+| Lo que nunca hace | calcular el precio; aprobar un margen bajo | recalcular el costo; cambiar tarifas |
+
+El estado `listo` es el que faltaba entre `planned` y `built`: `planned` mentiría —el agente está
+entero— y `built` mentiría más —nadie puede convocarlo—. `agents/runtime.py` rechaza la
+convocatoria **nombrando la condición que falta y quién la cierra**, y la regla 13 del validador
+falla si un agente `listo` no declara esa lista, o si la declara toda cumplida y sigue apagado.
+
+```
+$ python -m office.cli convocar D4-03 --titulo "..." --descripcion "..." --entregable "..." --por Gabriel
+RECHAZADO: Ivana (D4-03) esta listo pero sin encender: faltan 2 de 4 condiciones.
+Margen objetivo y mínimo por ruta calibrados... (lo cierra Nay); Bandeja única de HITL... (lo cierra D5-01)
+```
+
 ## Lo que falta para encender `D4-03` y `D2-03`
 
 | Condición (§17.5) | Estado |
 |---|---|
-| Margen objetivo y mínimo por ruta calibrados | **Pendiente.** El mínimo ya vive por ruta en la tabla de precios; el objetivo global sigue en `null`. Requiere el histórico real que produce la Fase 0 |
+| Margen objetivo y mínimo por ruta calibrados | **Pendiente.** El mínimo ya vive por ruta en la tabla de precios; el objetivo global sigue en `null`. Requiere el histórico real que produce la Fase 0. Lo cierra Nay; lo decide Gabriel |
 | Bandeja de HITL del ERP en producción, con los SLA de §7.3 | **Pendiente.** Es el primer hito del backlog del ERP (`E-001`). El cálculo del SLA ya existe; falta dónde llegue |
-| `validate_registry.py` en verde | **Hecho.** 13 reglas en verde, 2 omitidas por depender del catálogo de habilidades |
+| Un trimestre de viajes cerrados sin filas en cuarentena (sólo `D2-03`) | **Pendiente.** Un margen calculado sobre datos con huecos se mueve sin avisar |
+| `validate_registry.py` en verde | **Hecho.** 14 reglas en verde, 2 omitidas por depender del catálogo de habilidades |
+| Bitácora del office migrada a `svc-runlog` | **Hecho.** Un solo registro por caso; ver [oficina-virtual.md](oficina-virtual.md) |
 
 Mientras tanto los cinco servicios son útiles sin ningún agente: `cotizar` desde la línea de
 comandos ya aplica el gate completo y deja el rastro.
@@ -110,6 +135,10 @@ comandos ya aplica el gate completo y deja el rastro.
   el primer mes real de `svc-runlog`.
 * **El calendario laboral no conoce días festivos.** Es dato maestro y entra con el ERP. Hoy un
   SLA que cruza un festivo vence antes de lo debido.
-* **La bitácora del `office/` no migró a `svc-runlog`.** Son dos registros por ahora: uno de la
-  oficina de agentes (pausada) y otro de los casos. La migración es condición para reanudar los
-  agentes — ver [oficina-virtual.md](oficina-virtual.md).
+* **`svc-budget` sigue sin consumo real que observar.** El primer mes de `svc-runlog` con un
+  agente encendido es lo que lo calibra, y no hay agente encendido. Es una deuda que sólo se
+  paga en ese orden.
+* **La bitácora del `office/` ya migró a `svc-runlog`** — deuda saldada, y con ella se levantó la
+  pausa de la oficina. El registro vive en `data/runlog/`, que está en `.gitignore`: la bitácora
+  de la oficina dejó de versionarse en git a partir de la migración. Ver
+  [oficina-virtual.md](oficina-virtual.md).

@@ -284,6 +284,7 @@
   .e-pendiente { color: var(--senal); }
   .e-libre, .e-hecho { color: var(--ok); }
   .e-vacante, .e-pausado { color: var(--tenue); }
+  .e-listo { color: var(--curso); }
 
   .aviso-pausa {
     display: flex;
@@ -481,7 +482,7 @@
 
   const COLOR_ESTADO = {
     bloqueado: "#ef6a5c", en_curso: "#5cc0dd", pendiente: "#f0a01e",
-    libre: "#5ec27f", vacante: "#7c8494", pausado: "#8d93a1",
+    libre: "#5ec27f", vacante: "#7c8494", pausado: "#8d93a1", listo: "#8fb8ff",
   };
 
   const agentes = ESTADO.agentes || [];
@@ -537,7 +538,7 @@
   function escritorio(a) {
     const x = a.escritorio.x * TILE, y = a.escritorio.y * TILE;
     const color = COLOR_ESTADO[a.postura];
-    const activo = a.postura !== "vacante" && a.postura !== "pausado";
+    const activo = a.postura !== "vacante" && a.postura !== "pausado" && a.postura !== "listo";
 
     if (activo) {
       ctx.fillStyle = "rgba(255,205,120,.13)";
@@ -568,7 +569,7 @@
     const x = base.x + 8;
     let y = base.y + 22;
 
-    if (a.postura === "vacante") {
+    if (a.postura === "vacante" || a.postura === "listo") {
       px(x + 1, y - 2, 10, 3, "#4a525c");   // silla sola
       px(x + 4, y + 1, 4, 5, "#3d444d");
       return;
@@ -691,7 +692,7 @@
     const r = ESTADO.resumen || {};
     const caja = document.getElementById("cifras");
     const datos = [
-      { valor: `${r.disponibles}/${r.agentes}`, etiqueta: "agentes listos", clase: "" },
+      { valor: `${r.disponibles}/${r.agentes}`, etiqueta: "agentes encendidos", clase: "" },
       { valor: r.en_curso, etiqueta: "en curso", clase: "curso" },
       { valor: r.bloqueados, etiqueta: "esperan a un humano", clase: "alerta" },
       { valor: `${r.avance_pct}%`, etiqueta: "avance del ERP", clase: "" },

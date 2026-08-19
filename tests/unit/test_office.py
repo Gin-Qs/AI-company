@@ -99,7 +99,8 @@ def test_estado_resume_el_avance(oficina_temporal):
     assert resumen["abiertos"] == 1
     assert resumen["avance_pct"] == 50
     assert resumen["disponibles"] == 11        # los 9 consultores + D5-01 + D5-03
-    assert resumen["agentes"] == 12            # con la silla vacía de D5-02
+    assert resumen["listos"] == 2              # D4-03 y D2-03: completos y sin encender
+    assert resumen["agentes"] == 14            # con la silla vacía de D5-02
     assert segundo.estado == "pendiente"
 
 
@@ -122,7 +123,7 @@ def test_build_incrusta_un_estado_json_valido(oficina_temporal, tmp_path):
 def test_el_plano_dibuja_a_todos_los_que_tienen_identidad(oficina_temporal):
     estado = construir()
 
-    assert len(estado["agentes"]) == 12
+    assert len(estado["agentes"]) == 14
     for agente in estado["agentes"]:
         assert agente["escritorio"]["x"] is not None
         assert agente["sprite"], f"{agente['id']} sin sprite"

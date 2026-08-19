@@ -27,6 +27,7 @@ POSTURAS = {
     "en_curso": "tecleando",
     "pendiente": "leyendo el encargo",
     "libre": "disponible",
+    "listo": "listo, sin encender",
     "vacante": "silla vacia",
 }
 
@@ -37,16 +38,28 @@ def leer_pausa() -> dict:
         return {"activa": False}
     datos = yaml.safe_load(PAUSA.read_text(encoding="utf-8")) or {}
     # YAML convierte `desde: 2026-08-18` en un date, que no es serializable a JSON y
-    # viaja embebido en el plano. Se normaliza aqui, no en cada consumidor.
-    normalizados = {
-        clave: valor if isinstance(valor, (str, bool, int, float, list, dict, type(None))) else str(valor)
-        for clave, valor in datos.items()
-    }
+    # viaja embebido en el plano. Se normaliza aqui, no en cada consumidor — y en toda la
+    # profundidad, porque el historial de pausas es una lista de mapas con fechas dentro.
+    normalizados = _serializable(datos)
     normalizados["activa"] = bool(datos.get("activa"))
     return normalizados
 
 
+def _serializable(valor):
+    if isinstance(valor, dict):
+        return {clave: _serializable(v) for clave, v in valor.items()}
+    if isinstance(valor, list):
+        return [_serializable(v) for v in valor]
+    if isinstance(valor, (str, bool, int, float, type(None))):
+        return valor
+    return str(valor)
+
+
 def _postura(quien, encargos: list[Encargo], pausada: bool = False) -> str:
+    if quien.listo:
+        # El escritorio está puesto y el contrato escrito. Lo que falta no es trabajo del
+        # agente: son sus condiciones de encendido, y ésas las cierra la empresa.
+        return "listo"
     if not quien.disponible:
         return "vacante"
     if pausada:
@@ -106,6 +119,7 @@ def construir() -> dict:
         "resumen": {
             "agentes": len(agentes),
             "disponibles": sum(1 for a in agentes if a["disponible"]),
+            "listos": sum(1 for a in agentes if a["listo"]),
             "encargos": len(encargos),
             "abiertos": sum(1 for e in todos_encargos.values() if e.abierto),
             "bloqueados": sum(1 for e in todos_encargos.values() if e.estado == "bloqueado"),
@@ -131,7 +145,7 @@ def resumen_texto() -> str:
     ]
     for agente in estado["agentes"]:
         marca = {"bloqueado": "!", "en_curso": ">", "pendiente": ".", "libre": " ",
-                 "vacante": "-", "pausado": "="}[agente["postura"]]
+                 "vacante": "-", "pausado": "=", "listo": "+"}[agente["postura"]]
         titulo = next((e["titulo"] for e in agente["encargos"] if e["estado"] in ("bloqueado", "en_curso")), "")
         lineas.append(
             f" {marca} {agente['nombre']:<8} {agente['id']:<6} {agente['postura_texto']:<18} {titulo[:44]}"

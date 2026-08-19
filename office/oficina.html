@@ -284,6 +284,7 @@
   .e-pendiente { color: var(--senal); }
   .e-libre, .e-hecho { color: var(--ok); }
   .e-vacante, .e-pausado { color: var(--tenue); }
+  .e-listo { color: var(--curso); }
 
   .aviso-pausa {
     display: flex;
@@ -466,18 +467,28 @@
 
 <script>
   const ESTADO = /*__ESTADO__*/{
- "generado": "2026-08-18T15:47:16+00:00",
+ "generado": "2026-08-19T05:29:49+00:00",
  "pausa": {
-  "activa": true,
-  "desde": "2026-08-18",
-  "por": "Gabriel",
-  "motivo": "Sentar las bases antes de pulir la capa de agentes. La Fase 1 aporta los cinco servicios determinísticos que todo agente va a necesitar el primer día —trazabilidad de proceso, trazabilidad de cifras, validación, presupuesto y pricing—, y construirlos primero evita que los agentes se apoyen en muletas que después hay que quitar.\n",
-  "se_reanuda_cuando": "Los cinco servicios de la Fase 1 estén construidos y en verde, y la bitácora del office migre a svc-runlog. La capa de agentes se retoma con el gobierno ya puesto.\n",
+  "activa": false,
+  "historial": [
+   {
+    "desde": "2026-08-18",
+    "hasta": "2026-08-18",
+    "por": "Gabriel",
+    "motivo": "Sentar las bases antes de pulir la capa de agentes. La Fase 1 aporta los cinco servicios determinísticos que todo agente va a necesitar el primer día —trazabilidad de proceso, trazabilidad de cifras, validación, presupuesto y pricing—, y construirlos primero evita que los agentes se apoyen en muletas que después hay que quitar.\n",
+    "se_reanudaba_cuando": "Los cinco servicios de la Fase 1 estén construidos y en verde, y la bitácora del office migre a svc-runlog. La capa de agentes se retoma con el gobierno ya puesto.\n",
+    "reanudada_porque": "Las dos condiciones se cumplieron. Los cinco servicios están construidos y la suite completa está en verde; la bitácora del office dejó de ser un registro propio y ahora es una vista de svc-runlog, con el histórico importado sin perder fecha ni trace (scripts/migrar_bitacora.py). Ya no hay dos respuestas posibles a \"¿qué le pasó a este caso?\".\n"
+   }
+  ],
   "conserva": [
    "Memorias en agents/memoria/: intactas y versionadas",
    "Encargos abiertos en office/encargos/: se quedan en su estado, no se cancelan",
    "Bitácora: append-only, no se reescribe",
    "Registro: los agentes siguen declarados, con su fase y su razón de adelanto"
+  ],
+  "no_enciende": [
+   "D4-03: margen calibrado y bandeja de HITL en producción",
+   "D2-03: margen calibrado, bandeja de HITL y un trimestre de viajes cerrados"
   ]
  },
  "zonas": {
@@ -496,6 +507,14 @@
   "datos": {
    "nombre": "Datos e Insights",
    "descripcion": "Silla vacía hasta la fase 3: sin svc-kpi no hay nada que leer."
+  },
+  "comercial": {
+   "nombre": "Pricing y Propuestas",
+   "descripcion": "D4-03. El escritorio está puesto y la silla vacía: listo, sin encender."
+  },
+  "finanzas": {
+   "nombre": "Costos y Márgenes",
+   "descripcion": "D2-03. Mismo caso: contrato completo, encendido pendiente de calibrar."
   }
  },
  "agentes": [
@@ -509,6 +528,8 @@
    "mision": "Flujos de pantalla y wireframes de un módulo Revisión de usabilidad antes de construir Casos de uso y criterios de aceptación desde la perspectiva del usuario",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 2,
@@ -537,8 +558,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-004",
@@ -578,6 +599,8 @@
    "mision": "Componentes, formularios y tablas del ERP Consistencia visual entre módulos QA de interfaz antes de release",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 4,
@@ -605,8 +628,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-005",
@@ -646,6 +669,8 @@
    "mision": "Diseño de servicios y reglas de negocio Manejo de errores y procesos transaccionales Revisión de un servicio determinístico antes de darlo por bueno",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 6,
@@ -674,8 +699,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-003",
@@ -715,6 +740,8 @@
    "mision": "Esquema, relaciones e integridad Migraciones y diccionario de datos Performance de consultas",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 2,
@@ -743,8 +770,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "en_curso",
+   "postura_texto": "tecleando",
    "encargos": [
     {
      "id": "E-002",
@@ -797,6 +824,8 @@
    "mision": "Endpoints y webhooks Conexión con GPS, TMS, banca y SAT Contratos de integración y manejo de fallos",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 4,
@@ -825,8 +854,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-006",
@@ -866,6 +895,8 @@
    "mision": "Roles, permisos y autenticación Revisión de superficie de ataque de un módulo Diseño de svc-rbac",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 6,
@@ -894,8 +925,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-007",
@@ -935,6 +966,8 @@
    "mision": "Casos de prueba y regresión Criterios de aceptación verificables Validación de release",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 2,
@@ -962,8 +995,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-008",
@@ -1003,6 +1036,8 @@
    "mision": "Despliegue, ambientes y versionado Monitoreo, logs y alertas técnicas Backups y plan de recuperación",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 4,
@@ -1031,8 +1066,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-009",
@@ -1072,6 +1107,8 @@
    "mision": "Arquitectura escrita y diagramas Changelog y guía de onboarding Decisiones técnicas registradas (ADR)",
    "estado": "disponible",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "consultoria",
    "escritorio": {
     "x": 6,
@@ -1099,8 +1136,8 @@
     "Gabriel",
     "D5-01"
    ],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-010",
@@ -1132,6 +1169,248 @@
    }
   },
   {
+   "id": "D2-03",
+   "tipo": "dominio",
+   "nombre": "Rubén",
+   "puesto": "Costos y Márgenes",
+   "lema": "Un margen sin el supuesto que lo sostiene es una cifra bonita.",
+   "voz": "Lee la salida de svc-costing y explica de dónde sale cada peso. Declara lo que no sabe.",
+   "mision": "Explicar el costo y el margen que producen svc-costing y svc-profitability: qué ruta, qué cliente y qué unidad ganan dinero, cuáles no y por qué. Ningún número lo calcula él; su trabajo es la lectura, el supuesto declarado y la recomendación de dónde apretar.",
+   "estado": "listo",
+   "disponible": false,
+   "listo": true,
+   "condiciones_encendido": [
+    {
+     "condicion": "Margen objetivo y mínimo por ruta calibrados con el histórico de svc-profitability",
+     "responsable": "Nay",
+     "decide": "Gabriel",
+     "cumplida": false,
+     "donde": "registry/policies/authority-gate.yaml -> umbrales.cotizacion.margen_objetivo_pct"
+    },
+    {
+     "condicion": "Bandeja única de HITL del ERP en producción con los SLA de §7.3",
+     "responsable": "D5-01",
+     "decide": "Gabriel",
+     "cumplida": false,
+     "donde": "office/encargos/E-001.yaml"
+    },
+    {
+     "condicion": "Un trimestre de viajes cerrados cargados por svc-ingest, sin filas en cuarentena",
+     "responsable": "Nay",
+     "cumplida": false,
+     "donde": "data/real/"
+    },
+    {
+     "condicion": "Bitácora del office migrada a svc-runlog: un solo registro por caso",
+     "responsable": "D5-03",
+     "cumplida": true
+    }
+   ],
+   "zona": "finanzas",
+   "escritorio": {
+    "x": 9,
+    "y": 2
+   },
+   "sprite": {
+    "piel": "#8d5a3b",
+    "pelo": "#3a3a3a",
+    "ropa": "#2d5f4f",
+    "acento": "#9be6c2",
+    "estilo": "corto"
+   },
+   "habilidades": [
+    "analisis_de_margen",
+    "costo_por_km_explicado",
+    "hallazgo_de_desviacion",
+    "recomendacion_de_ajuste"
+   ],
+   "no_hace": [
+    "no calcula costo por su cuenta",
+    "no cambia tarifas",
+    "no cita cifra sin respaldo en svc trace",
+    "no afirma causa sin supuesto declarado",
+    "no compara operadores sin rubrica"
+   ],
+   "acciones": [],
+   "herramientas": [
+    "svc-costing",
+    "svc-profitability",
+    "svc-masterdata",
+    "svc-validation",
+    "svc-trace",
+    "svc-runlog",
+    "svc-budget"
+   ],
+   "herramientas_planeadas": [
+    "svc-scenarios"
+   ],
+   "convocable_por": [
+    "Gabriel",
+    "Nay",
+    "O1"
+   ],
+   "postura": "listo",
+   "postura_texto": "listo, sin encender",
+   "encargos": [],
+   "abiertos": 0,
+   "memoria": {
+    "habilidades": [
+     "analisis_de_margen",
+     "costo_por_km_explicado",
+     "hallazgo_de_desviacion",
+     "recomendacion_de_ajuste"
+    ],
+    "notas": [
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "decision",
+      "texto": "No comparo operadores ni unidades sin rubrica versionada (§9.1). Un ranking con consecuencia sobre una persona sin rubrica no sale de aqui."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "supuesto",
+      "texto": "Un margen negativo puede ser un viaje malo o un dato malo. Antes de concluir reviso cuarentena de svc-ingest: una fila rechazada no aparece en el margen y lo mueve sin avisar."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "trampa",
+      "texto": "Los fijos se asignan por km o por viaje segun un parametro del maestro. Dos analisis con base de asignacion distinta no se comparan aunque las cifras se parezcan; la base va declarada en el supuesto."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "contexto",
+      "texto": "El costo por km sale de ocho conceptos de svc-costing: diesel, operador, casetas, mantenimiento, llantas, seguro, depreciacion y fijos asignados. Explico esa suma; no la recalculo por mi cuenta."
+     }
+    ],
+    "total_notas": 4
+   }
+  },
+  {
+   "id": "D4-03",
+   "tipo": "dominio",
+   "nombre": "Ivana",
+   "puesto": "Pricing y Propuestas",
+   "lema": "El precio ya está calculado. Lo mío es que se entienda y que nadie lo empeore.",
+   "voz": "Redacta la propuesta sobre la cotización que le dan. Si le piden bajar el margen, remite al gate.",
+   "mision": "Redactar propuestas comerciales rentables sobre un precio que calcula svc-pricing. No fija la tarifa, no negocia el descuento y no decide el margen: convierte una cotización determinística en algo que un cliente pueda leer y aprobar.",
+   "estado": "listo",
+   "disponible": false,
+   "listo": true,
+   "condiciones_encendido": [
+    {
+     "condicion": "Margen objetivo y mínimo por ruta calibrados con el histórico de svc-profitability",
+     "responsable": "Nay",
+     "decide": "Gabriel",
+     "cumplida": false,
+     "donde": "registry/policies/authority-gate.yaml -> umbrales.cotizacion.margen_objetivo_pct"
+    },
+    {
+     "condicion": "Bandeja única de HITL del ERP en producción con los SLA de §7.3",
+     "responsable": "D5-01",
+     "decide": "Gabriel",
+     "cumplida": false,
+     "donde": "office/encargos/E-001.yaml"
+    },
+    {
+     "condicion": "validate_registry.py en verde",
+     "responsable": "D5-03",
+     "cumplida": true
+    },
+    {
+     "condicion": "Bitácora del office migrada a svc-runlog: un solo registro por caso",
+     "responsable": "D5-03",
+     "cumplida": true
+    }
+   ],
+   "zona": "comercial",
+   "escritorio": {
+    "x": 9,
+    "y": 6
+   },
+   "sprite": {
+    "piel": "#c98d63",
+    "pelo": "#241a12",
+    "ropa": "#a8432f",
+    "acento": "#ffd166",
+    "estilo": "largo"
+   },
+   "habilidades": [
+    "cotizacion",
+    "propuesta_comercial",
+    "email_sugerido"
+   ],
+   "no_hace": [
+    "no calcula precio",
+    "no envia sin autorizacion",
+    "no aprueba margen bajo",
+    "no cita cifra sin respaldo en svc trace",
+    "no promete fecha ni capacidad"
+   ],
+   "acciones": [
+    "ACT-EMAIL-S"
+   ],
+   "herramientas": [
+    "svc-pricing",
+    "svc-costing",
+    "svc-profitability",
+    "svc-masterdata",
+    "svc-validation",
+    "svc-trace",
+    "svc-runlog",
+    "svc-budget"
+   ],
+   "herramientas_planeadas": [
+    "svc-notify"
+   ],
+   "convocable_por": [
+    "Gabriel",
+    "Ana",
+    "O1"
+   ],
+   "postura": "listo",
+   "postura_texto": "listo, sin encender",
+   "encargos": [],
+   "abiertos": 0,
+   "memoria": {
+    "habilidades": [
+     "cotizacion",
+     "propuesta_comercial",
+     "email_sugerido"
+    ],
+    "notas": [
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "supuesto",
+      "texto": "Mientras svc-notify no exista (fase 2), ACT-EMAIL-S es HITL siempre. Redacto el correo; enviarlo es de una persona."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "trampa",
+      "texto": "El descuento de 5% que separa a Ana de Gabriel sale del organigrama firmado, no de una costumbre. Un 5.1% no es \"practicamente cinco\": es autorizacion de Direccion."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "decision",
+      "texto": "Una cotizacion bajo el margen minimo de la ruta no llega a mi: cotizar() levanta CotizacionBloqueada antes de devolver nada. Si alguien me pide \"ajustar el numero para que cierre\", la respuesta es el gate, no una redaccion mas persuasiva."
+     },
+     {
+      "fecha": "2026-08-18",
+      "encargo": "-",
+      "tipo": "contexto",
+      "texto": "El precio no se redacta: lo devuelve svc-pricing sobre la tabla vigente que Gabriel mantiene por ruta. Mi entrada es una Cotizacion ya dictaminada, con su nivel de autorizacion resuelto."
+     }
+    ],
+    "total_notas": 4
+   }
+  },
+  {
    "id": "D5-01",
    "tipo": "dominio",
    "nombre": "Mateo",
@@ -1141,6 +1420,8 @@
    "mision": "Traducir la operación real de Fleeter en requerimientos del ERP, integrar lo que devuelven los consultores y sostener el backlog. Es el único agente, además de Dirección, que puede convocar a la capa de consultoría (§5-bis.3).",
    "estado": "built",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "producto",
    "escritorio": {
     "x": 11,
@@ -1176,8 +1457,8 @@
     "svc-kpi"
    ],
    "convocable_por": [],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "bloqueado",
+   "postura_texto": "levanta la mano",
    "encargos": [
     {
      "id": "E-012",
@@ -1240,6 +1521,8 @@
    "mision": "Convertir los datos del ERP en insights verificables, siempre con la cifra reconciliada contra su origen. Los dashboards son Metabase sobre svc-kpi, no este agente (§4.1).",
    "estado": "planned",
    "disponible": false,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "datos",
    "escritorio": {
     "x": 11,
@@ -1296,6 +1579,8 @@
    "mision": "Vigilar la calidad del conjunto de agentes: prompts versionados, entregables que cumplen el contrato de §7.1, costo por invocación y deriva. Es el consumidor principal de la bitácora.",
    "estado": "built",
    "disponible": true,
+   "listo": false,
+   "condiciones_encendido": [],
    "zona": "agentops",
    "escritorio": {
     "x": 13,
@@ -1332,8 +1617,8 @@
     "svc-rbac"
    ],
    "convocable_por": [],
-   "postura": "pausado",
-   "postura_texto": "en pausa",
+   "postura": "pendiente",
+   "postura_texto": "leyendo el encargo",
    "encargos": [
     {
      "id": "E-011",
@@ -1568,6 +1853,15 @@
  ],
  "bitacora": [
   {
+   "ts": "2026-08-19T05:11:12+00:00",
+   "trace_id": "TR-20260819-001",
+   "evento": "reanudacion",
+   "agente": "oficina",
+   "encargo": "-",
+   "detalle": "Los cinco servicios de la Fase 1 en verde y la bitacora del office migrada a svc-runlog: las dos condiciones escritas en la pausa se cumplieron.",
+   "autor": "Gabriel"
+  },
+  {
    "ts": "2026-08-18T15:30:08+00:00",
    "trace_id": "TR-20260818-017",
    "evento": "pausa",
@@ -1749,8 +2043,9 @@
   }
  ],
  "resumen": {
-  "agentes": 12,
+  "agentes": 14,
   "disponibles": 11,
+  "listos": 2,
   "encargos": 12,
   "abiertos": 12,
   "bloqueados": 1,
@@ -1774,7 +2069,7 @@
 
   const COLOR_ESTADO = {
     bloqueado: "#ef6a5c", en_curso: "#5cc0dd", pendiente: "#f0a01e",
-    libre: "#5ec27f", vacante: "#7c8494", pausado: "#8d93a1",
+    libre: "#5ec27f", vacante: "#7c8494", pausado: "#8d93a1", listo: "#8fb8ff",
   };
 
   const agentes = ESTADO.agentes || [];
@@ -1830,7 +2125,7 @@
   function escritorio(a) {
     const x = a.escritorio.x * TILE, y = a.escritorio.y * TILE;
     const color = COLOR_ESTADO[a.postura];
-    const activo = a.postura !== "vacante" && a.postura !== "pausado";
+    const activo = a.postura !== "vacante" && a.postura !== "pausado" && a.postura !== "listo";
 
     if (activo) {
       ctx.fillStyle = "rgba(255,205,120,.13)";
@@ -1861,7 +2156,7 @@
     const x = base.x + 8;
     let y = base.y + 22;
 
-    if (a.postura === "vacante") {
+    if (a.postura === "vacante" || a.postura === "listo") {
       px(x + 1, y - 2, 10, 3, "#4a525c");   // silla sola
       px(x + 4, y + 1, 4, 5, "#3d444d");
       return;
@@ -1984,7 +2279,7 @@
     const r = ESTADO.resumen || {};
     const caja = document.getElementById("cifras");
     const datos = [
-      { valor: `${r.disponibles}/${r.agentes}`, etiqueta: "agentes listos", clase: "" },
+      { valor: `${r.disponibles}/${r.agentes}`, etiqueta: "agentes encendidos", clase: "" },
       { valor: r.en_curso, etiqueta: "en curso", clase: "curso" },
       { valor: r.bloqueados, etiqueta: "esperan a un humano", clase: "alerta" },
       { valor: `${r.avance_pct}%`, etiqueta: "avance del ERP", clase: "" },

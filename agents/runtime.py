@@ -40,6 +40,15 @@ class AgenteNoDisponible(RuntimeError):
     """El agente existe en el registro pero su fase no llego."""
 
 
+class AgenteSinEncender(AgenteNoDisponible):
+    """El agente esta completo y no se enciende: le faltan condiciones de entrada.
+
+    Se distingue de `AgenteNoDisponible` a proposito. "Su fase no llego" y "esta listo y
+    faltan dos condiciones que alguien tiene que cerrar" son dos situaciones distintas, y
+    la segunda tiene dueno y fecha.
+    """
+
+
 class OficinaEnPausa(RuntimeError):
     """La oficina esta detenida por decision escrita en office/pausa.yaml."""
 
@@ -63,6 +72,16 @@ def convocar(
         )
 
     quien = perfil(agente_id)
+
+    if quien.listo:
+        pendientes = quien.condiciones_pendientes
+        detalle = "; ".join(
+            f"{c.get('condicion')} (lo cierra {c.get('responsable', 'sin responsable')})" for c in pendientes
+        )
+        raise AgenteSinEncender(
+            f"{quien.etiqueta} esta listo pero sin encender: "
+            f"faltan {len(pendientes)} de {len(quien.condiciones_encendido)} condiciones. {detalle}"
+        )
 
     if not quien.disponible:
         raise AgenteNoDisponible(
@@ -157,6 +176,21 @@ def armar_contexto(agente_id: str, encargo: Encargo | None = None) -> str:
         partes.append(f"- Te convoca: {', '.join(quien.convocable_por)}. Nadie más.")
     partes.append("")
 
+    if quien.listo:
+        # Un prompt que no dice que el agente está apagado se lee como si estuviera operando.
+        partes += [
+            "## Todavía no estás encendido",
+            "",
+            "Tu contrato está completo y nadie puede convocarte hasta que se cierren estas",
+            "condiciones. Están en tu registro, no en la memoria de nadie:",
+            "",
+        ]
+        for condicion in quien.condiciones_encendido:
+            marca = "x" if condicion.get("cumplida") else " "
+            responsable = condicion.get("responsable", "sin responsable")
+            partes.append(f"- [{marca}] {condicion.get('condicion')} — *{responsable}*")
+        partes.append("")
+
     if memoria.notas:
         partes += ["## Tu memoria", "", "Lo que ya sabes de encargos anteriores:", ""]
         for nota in memoria.recientes(8):
@@ -205,7 +239,9 @@ def escribir_prompts() -> list[Path]:
     DIR_PROMPTS.mkdir(parents=True, exist_ok=True)
     escritos: list[Path] = []
     for agente_id, quien in sorted(cargar_perfiles().items()):
-        if not quien.disponible:
+        # Los `listo` tambien: su prompt se escribe y se revisa antes de encenderlos, que es
+        # justo para lo que sirve tenerlos listos.
+        if not quien.disponible and not quien.listo:
             continue
         destino = DIR_PROMPTS / f"{agente_id}.md"
         destino.write_text(

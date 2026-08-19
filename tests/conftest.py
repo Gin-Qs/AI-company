@@ -41,7 +41,9 @@ def oficina_temporal(tmp_path, monkeypatch):
     from office import estado as estado_mod
 
     monkeypatch.setattr(encargos_mod, "DIRECTORIO", tmp_path / "encargos")
-    monkeypatch.setattr(bitacora, "ARCHIVO", tmp_path / "bitacora.jsonl")
+    # La bitácora del office ya es una vista de svc-runlog: redirigir su archivo redirige
+    # el registro entero, casos incluidos.
+    monkeypatch.setattr(bitacora, "ARCHIVO", tmp_path / "runlog.jsonl")
     monkeypatch.setattr(memoria_mod, "DIRECTORIO", tmp_path / "memoria")
     monkeypatch.setattr(runtime, "DIR_PROMPTS", tmp_path / "prompts")
     # La pausa es estado real de la oficina. Las pruebas del flujo corren sobre una oficina

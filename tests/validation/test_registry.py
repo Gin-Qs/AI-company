@@ -58,3 +58,35 @@ def test_reglas_aplicables_hoy_no_estan_omitidas(raiz, regla):
     resultados = {r.numero: r for r in validate_registry.validar(raiz)}
 
     assert resultados[regla].estado == "OK"
+
+
+def test_los_dos_agentes_de_la_fase_1_estan_declarados(raiz):
+    registro = validate_registry.cargar_registro(raiz)
+    fase_1 = {aid for aid, a in registro.agentes.items() if a.get("fase") == 1}
+
+    assert fase_1 == {"D4-03", "D2-03"}
+    for agente_id in fase_1:
+        assert registro.agentes[agente_id]["estado"] == "listo"
+
+
+def test_la_regla_de_los_agentes_listos_esta_activa(raiz):
+    """Con dos agentes en `listo`, la regla 13 no puede estar omitida."""
+    resultados = {r.numero: r for r in validate_registry.validar(raiz)}
+
+    assert resultados["13"].estado == "OK"
+
+
+def test_un_agente_listo_sin_condiciones_falla(raiz, tmp_path):
+    """La regla que impide que `listo` sea un adjetivo sin consecuencias."""
+    import shutil
+
+    copia = tmp_path / "repo"
+    shutil.copytree(raiz / "registry", copia / "registry")
+    (copia / "tests").mkdir()
+    suelto = copia / "registry" / "agents" / "D4-03-pricing-y-propuestas.yaml"
+    texto = suelto.read_text(encoding="utf-8")
+    suelto.write_text(texto[: texto.index("condiciones_encendido:")], encoding="utf-8")
+
+    resultados = {r.numero: r for r in validate_registry.validar(copia)}
+
+    assert any("D4-03 esta listo sin declarar condiciones_encendido" in f for f in resultados["13"].fallas)

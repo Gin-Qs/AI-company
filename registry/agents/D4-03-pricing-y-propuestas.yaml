@@ -1,0 +1,77 @@
+id: D4-03
+name: Pricing y Propuestas
+department: 04-comercial-cliente
+teams:
+  - T04-03
+mission: >
+  Redactar propuestas comerciales rentables sobre un precio que calcula svc-pricing. No fija
+  la tarifa, no negocia el descuento y no decide el margen: convierte una cotización
+  determinística en algo que un cliente pueda leer y aprobar.
+
+# `listo` = contrato completo, prompt escrito, servicios conectados... y sin encender.
+# El estado existe porque `planned` mentiría (el agente está entero) y `built` mentiría más
+# (nadie puede convocarlo). Lo que falta está abajo, con nombre y responsable.
+estado: listo
+fase: 1
+model_tier: Medio
+absorbe: [A38, A39, A40]
+
+# §17.5. Mientras alguna siga en `false`, agents/runtime.py rechaza la convocatoria y dice
+# cuál falta. No es una nota en un documento: es la condición que evalúa el código.
+condiciones_encendido:
+  - condicion: "Margen objetivo y mínimo por ruta calibrados con el histórico de svc-profitability"
+    responsable: Nay
+    decide: Gabriel
+    cumplida: false
+    donde: registry/policies/authority-gate.yaml -> umbrales.cotizacion.margen_objetivo_pct
+  - condicion: "Bandeja única de HITL del ERP en producción con los SLA de §7.3"
+    responsable: D5-01
+    decide: Gabriel
+    cumplida: false
+    donde: office/encargos/E-001.yaml
+  - condicion: "validate_registry.py en verde"
+    responsable: D5-03
+    cumplida: true
+  - condicion: "Bitácora del office migrada a svc-runlog: un solo registro por caso"
+    responsable: D5-03
+    cumplida: true
+
+# Quien puede convocarlo el dia que se encienda. O1 no existe hasta la fase 4; hasta
+# entonces el ruteo es una persona, que es lo que la arquitectura dice que debe ser.
+invocable_por: [Gabriel, Ana, O1]
+
+tools:
+  - svc-pricing
+  - svc-costing
+  - svc-profitability
+  - svc-masterdata
+  - svc-validation
+  - svc-trace
+  - svc-runlog
+  - svc-budget
+tools_planeadas:
+  - svc-notify        # fase 2: hasta que exista, todo correo es CTL-HITL sin excepción
+
+inputs: [solicitud_cliente, ruta, unidad, operador, volumen, tipo_servicio, descuento_pedido]
+outputs: [cotizacion, propuesta_comercial, email_sugerido]
+
+# ACT-EMAIL-S está declarada pero no otorgada: sin encendido no hay acción posible, y aun
+# encendido el §11.4 la deja en HITL mientras no exista una plantilla fija de svc-notify.
+actions:
+  - ACT-EMAIL-S
+controls:
+  - CTL-HITL
+  - CTL-LIMIT
+  - CTL-CONF
+  - CTL-AUDIT
+
+limits:
+  - no_calcula_precio                  # §4.1: el precio sale de svc-pricing, siempre
+  - no_envia_sin_autorizacion
+  - no_aprueba_margen_bajo             # una cotización bajo el mínimo no se genera
+  - no_cita_cifra_sin_respaldo_en_svc_trace
+  - no_promete_fecha_ni_capacidad      # eso es de D3-01, que no existe hasta la fase 5
+
+prompt: agents/prompts/D4-03.md
+memoria: agents/memoria/D4-03.md
+prompt_version: v1.0.0

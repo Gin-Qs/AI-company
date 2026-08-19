@@ -104,8 +104,13 @@ class RunLog:
         criticidad: str = "media",
         actor: str = "O1",
         trace_id: str | None = None,
+        ts: str | None = None,
     ) -> Caso:
-        """Abre el trace del caso. Todo paso posterior lo hereda (§8.1)."""
+        """Abre el trace del caso. Todo paso posterior lo hereda (§8.1).
+
+        `ts` sólo se pasa al importar historia (scripts/migrar_bitacora.py). Un registro que
+        se rellena con la fecha de la importación deja de servir para reconstruir el pasado.
+        """
         if criticidad not in CRITICIDADES:
             raise ErrorDeValidacion(f"criticidad desconocida: {criticidad!r}", campo="criticidad")
 
@@ -113,7 +118,7 @@ class RunLog:
         if identificador in self.casos():
             raise ErrorDeIntegridad(f"el trace {identificador} ya existe", campo="trace_id")
 
-        momento = ahora().isoformat(timespec="seconds")
+        momento = ts or ahora().isoformat(timespec="seconds")
         self._escribir(
             {
                 "evento": "apertura",
@@ -148,6 +153,7 @@ class RunLog:
         costo_mxn: object = 0,
         latencia_ms: int = 0,
         gate: dict[str, str] | None = None,
+        ts: str | None = None,
     ) -> Paso:
         """Registra un paso del caso. Los reintentos se registran siempre (§8.1)."""
         caso = self.caso(trace_id)
@@ -157,7 +163,7 @@ class RunLog:
             parent_span_id=parent_span_id,
             actor=actor,
             tipo=tipo,
-            ts=ahora().isoformat(timespec="seconds"),
+            ts=ts or ahora().isoformat(timespec="seconds"),
             resultado=resultado,
             decision_ruteo=decision_ruteo,
             entradas=entradas or {},
@@ -171,7 +177,9 @@ class RunLog:
         self._escribir(paso.as_dict())
         return paso
 
-    def transicionar(self, trace_id: str, destino: str, *, actor: str, motivo: str = "") -> Caso:
+    def transicionar(
+        self, trace_id: str, destino: str, *, actor: str, motivo: str = "", ts: str | None = None
+    ) -> Caso:
         """Mueve el caso, validando la maquina de estados y el limite de reintentos."""
         caso = self.caso(trace_id)
         caso.exigir_transicion(destino)
@@ -180,7 +188,7 @@ class RunLog:
             trace_id=trace_id,
             de=caso.estado,
             a=destino,
-            ts=ahora().isoformat(timespec="seconds"),
+            ts=ts or ahora().isoformat(timespec="seconds"),
             actor=actor,
             motivo=motivo,
         )

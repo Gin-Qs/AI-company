@@ -253,17 +253,20 @@ def regla_7c(reg: Registro) -> Resultado:
 
 
 def regla_8(reg: Registro) -> Resultado:
-    r = Resultado("8", "Ningun agente built depende de un servicio planned")
-    construidos = [a for a in reg.agentes.values() if str(a.get("estado")) == "built"]
+    r = Resultado("8", "Ningun agente built o listo depende de un servicio planned")
+    # `listo` cuenta igual que `built`: un agente que se enciende manana no puede tener en
+    # su contrato un servicio que no existe, o el dia del encendido se descubre tarde.
+    construidos = [a for a in reg.agentes.values() if str(a.get("estado")) in ("built", "listo")]
     if not construidos:
-        r.omitida = "aun no hay agentes built"
+        r.omitida = "aun no hay agentes built ni listos"
         return r
     for agente in construidos:
         for herramienta in _lista(agente.get("tools")):
             servicio = reg.servicios.get(str(herramienta))
             if servicio and str(servicio.get("estado")) != "built":
                 r.fallas.append(
-                    f"{agente.get('id')} esta built y depende de {herramienta}, que sigue {servicio.get('estado')}"
+                    f"{agente.get('id')} esta {agente.get('estado')} y depende de {herramienta}, "
+                    f"que sigue {servicio.get('estado')}"
                 )
     return r
 
@@ -363,6 +366,47 @@ def regla_12(reg: Registro) -> Resultado:
     return r
 
 
+def regla_13(reg: Registro) -> Resultado:
+    """Propia de la Fase 1: `listo` no puede ser un adjetivo, tiene que ser una lista.
+
+    Un agente completo y sin encender es una situacion legitima y peligrosa: el trabajo esta
+    hecho, nadie lo esta usando y la razon se olvida en dos semanas. La regla obliga a que la
+    razon viva en el registro, con condicion, responsable y estado — y a que el ultimo `false`
+    que se cierre deje al agente sin excusa para seguir apagado.
+    """
+    r = Resultado("13", "Todo agente `listo` declara sus condiciones de encendido")
+    listos = {aid: a for aid, a in reg.agentes.items() if str(a.get("estado")) == "listo"}
+    if not listos:
+        r.omitida = "no hay agentes en estado listo"
+        return r
+
+    for agente_id, agente in listos.items():
+        condiciones = _lista(agente.get("condiciones_encendido"))
+        if not condiciones:
+            r.fallas.append(f"{agente_id} esta listo sin declarar condiciones_encendido: no se sabe que falta")
+            continue
+        for indice, condicion in enumerate(condiciones, start=1):
+            if not isinstance(condicion, dict):
+                r.fallas.append(f"{agente_id} condicion {indice} no es un mapa con condicion/responsable/cumplida")
+                continue
+            if not str(condicion.get("condicion") or "").strip():
+                r.fallas.append(f"{agente_id} condicion {indice} sin texto")
+            if not str(condicion.get("responsable") or "").strip():
+                r.fallas.append(f"{agente_id} condicion {indice} sin responsable: nadie la va a cerrar")
+            if condicion.get("cumplida") not in (True, False):
+                r.fallas.append(f"{agente_id} condicion {indice} sin `cumplida: true|false`")
+        pendientes = [c for c in condiciones if isinstance(c, dict) and not c.get("cumplida")]
+        if not pendientes:
+            r.fallas.append(
+                f"{agente_id} tiene todas sus condiciones cumplidas y sigue listo: "
+                f"o se enciende (estado: built) o falta escribir la condicion que lo detiene"
+            )
+        for herramienta in _lista(agente.get("prompt")) + _lista(agente.get("memoria")):
+            if not (reg.raiz / str(herramienta)).is_file():
+                r.fallas.append(f"{agente_id} declara {herramienta}, que no existe")
+    return r
+
+
 REGLAS = (
     regla_1,
     regla_2,
@@ -379,6 +423,7 @@ REGLAS = (
     regla_10,
     regla_11,
     regla_12,
+    regla_13,
 )
 
 
