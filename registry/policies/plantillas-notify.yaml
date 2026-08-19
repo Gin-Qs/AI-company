@@ -1,0 +1,61 @@
+# Plantillas de aviso — las únicas que svc-notify puede enviar
+#
+# Una plantilla es un texto que sale a nombre de la empresa. Por eso vive aquí, versionada y
+# con quién la aprobó, y no se edita en caliente. Esa propiedad —texto fijo, variables
+# validadas, sin LLM en el camino— es exactamente lo que permite que un aviso a cliente NO
+# sea CTL-HITL (§11.4). En el momento en que un mensaje externo lo redacte un modelo, vuelve
+# a ser HITL, y eso no es una restricción que se pueda relajar por conveniencia.
+#
+# ESTADO: PROPUESTA. Los textos los aprueba Ana (punto de contacto con el cliente) y los
+# firma Gabriel. Mientras `aprobadas: false`, svc-notify renderiza y registra, pero marca
+# cada mensaje como no aprobado.
+
+version: v0.1.0
+aprobadas: false
+aprueba: Ana
+firma: Gabriel
+
+# `entrega: externa` = el mensaje sale solo. `entrega: registro` = queda escrito y lo manda
+# una persona. La diferencia importa: sólo un canal externo activo puede decir "enviado".
+canales:
+  whatsapp: {activo: false, entrega: externa,  motivo: "sin proveedor contratado; §7.2 lo declara como notificación"}
+  correo:   {activo: false, entrega: externa,  motivo: "sin cuenta de envío configurada"}
+  bitacora: {activo: true,  entrega: registro, motivo: "el mensaje se registra en svc-runlog y lo envía una persona"}
+
+plantillas:
+  documento_faltante:
+    canal: bitacora
+    destinatarios: [operador, cliente]
+    asunto: "Falta un documento del viaje {trip_id}"
+    texto: >
+      Buen día {nombre}. Para poder facturar el viaje {trip_id} nos falta: {documento}.
+      ¿Nos lo puede enviar? Gracias.
+    variables:
+      nombre: {tipo: texto, obligatoria: true}
+      trip_id: {tipo: texto, obligatoria: true}
+      documento: {tipo: texto, obligatoria: true}
+
+  recordatorio_de_pago:
+    canal: bitacora
+    destinatarios: [cliente]
+    asunto: "Recordatorio de pago — factura {factura_id}"
+    texto: >
+      Buen día {nombre}. Le recordamos la factura {factura_id} por ${saldo_mxn},
+      con vencimiento el {vencimiento}. Quedamos atentos.
+    variables:
+      nombre: {tipo: texto, obligatoria: true}
+      factura_id: {tipo: texto, obligatoria: true}
+      saldo_mxn: {tipo: importe, obligatoria: true}
+      vencimiento: {tipo: fecha, obligatoria: true}
+
+  aviso_de_entrega:
+    canal: bitacora
+    destinatarios: [cliente]
+    asunto: "Su embarque {trip_id} fue entregado"
+    texto: >
+      Buen día {nombre}. Su embarque {trip_id} fue entregado el {fecha}.
+      La evidencia de entrega queda en su expediente.
+    variables:
+      nombre: {tipo: texto, obligatoria: true}
+      trip_id: {tipo: texto, obligatoria: true}
+      fecha: {tipo: fecha, obligatoria: true}

@@ -1,10 +1,10 @@
 id: svc-notify
 name: Avisos por Plantilla Fija
 type: deterministic_python
-estado: planned
+estado: built
 fase: 2
 owner_domain: [03-operaciones, 04-comercial-cliente]
-modulo: services/notify           # se crea al construir la fase
+modulo: services/notify
 
 # Plantillas fijas con variables validadas, sin LLM en el camino. Esa propiedad es lo que
 # permite que un aviso a cliente NO sea CTL-HITL (§11.4): el texto ya lo aprobó una persona
@@ -25,8 +25,13 @@ tests:
   - test_plantilla_fija_no_pasa_por_llm
   - test_variable_faltante_no_se_envia
   - test_variable_con_tipo_invalido_se_rechaza
+  - test_una_variable_de_mas_tambien_se_rechaza
   - test_plantilla_desconocida_se_rechaza
+  - test_no_se_manda_a_un_destinatario_fuera_del_maestro
   - test_envio_queda_en_svc_runlog
+  - test_sin_canal_externo_no_dice_enviado
+  - test_una_plantilla_con_un_hueco_sin_declarar_no_carga
+  - test_las_plantillas_declaran_si_estan_aprobadas
 
 controls: [CTL-AUDIT, CTL-LIMIT, CTL-PRIVACY]
 limits:
@@ -34,6 +39,12 @@ limits:
   - no_envia_a_destinatario_fuera_del_maestro
   - no_reintenta_sin_limite
 version: v0.1.0-contrato
+
+plantillas: registry/policies/plantillas-notify.yaml
+
+# Sin canal externo contratado, el servicio registra el mensaje y lo manda una persona. No
+# devuelve "enviado" sin haber enviado: esa mentira no se detecta hasta que el cliente reclama.
+canales_externos_activos: false
 
 decisiones_pendientes:
   - "Qué plantillas existen y quién las aprueba. Una plantilla es un texto que sale a nombre

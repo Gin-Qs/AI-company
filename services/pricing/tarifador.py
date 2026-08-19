@@ -25,7 +25,7 @@ import yaml
 
 from services.common.errors import EntradaFaltante, ErrorDeServicio, ErrorDeValidacion
 from services.common.money import cantidad, cuota, mxn
-from services.common.result import Supuesto
+from services.common.result import Autorizacion, Supuesto
 from services.costing.motor import EntradaCosteo, ResultadoCosteo, costear
 from services.masterdata.catalogo import Catalogo
 from services.masterdata.models import Tarifa
@@ -91,18 +91,6 @@ def cargar_politica(ruta: str | Path | None = None) -> PoliticaCotizacion:
         calibrado=bool(cotizacion.get("calibrado")),
         version=str(datos.get("version") or "v1"),
     )
-
-
-@dataclass(frozen=True)
-class Autorizacion:
-    """Autorización humana explícita para salirse del gate. Sin esto no hay excepción."""
-
-    quien: str
-    motivo: str
-    otorgada: str = ""
-
-    def as_dict(self) -> dict[str, str]:
-        return {"quien": self.quien, "motivo": self.motivo, "otorgada": self.otorgada}
 
 
 @dataclass

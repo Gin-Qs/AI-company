@@ -145,6 +145,6 @@ comandos ya aplica el gate completo y deja el rastro.
 
 ## Qué sigue
 
-La Fase 2 ya está preparada —contratos, orden de construcción y decisiones pendientes— y no
-arranca hasta que estos dos agentes estén encendidos y hayan llevado casos reales de punta a
-punta. Ver [fase-2.md](fase-2.md).
+La Fase 2 ya está construida —expediente, comprobante, validación del SAT, cartera y avisos— y
+sus dos agentes quedaron en el mismo estado que éstos: `listo`, sin encender. Los cuatro
+comparten la misma condición pendiente, la bandeja de HITL del ERP. Ver [fase-2.md](fase-2.md).

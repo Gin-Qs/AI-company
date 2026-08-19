@@ -1,10 +1,10 @@
 id: svc-doc-checklist
 name: Completitud Documental del Viaje
 type: deterministic_python
-estado: planned
+estado: built
 fase: 2
 owner_domain: [03-operaciones, 02-finanzas]
-modulo: services/doc_checklist    # se crea al construir la fase
+modulo: services/doc_checklist
 
 # La primera de las dos puertas del ciclo operación → ingreso: sin expediente completo no se
 # factura. Es una lista de presencia y vigencia, no un juicio: qué documento falta, cuál está
@@ -27,8 +27,13 @@ tests:
   - test_expediente_completo_libera_facturacion
   - test_falta_evidencia_de_entrega_bloquea
   - test_documento_vencido_no_cuenta_como_presente
+  - test_la_vigencia_se_deriva_de_la_emision_cuando_no_viene_impresa
   - test_documento_de_otro_viaje_se_rechaza
   - test_requisitos_dependen_del_tipo_de_servicio
+  - test_un_opcional_ausente_no_bloquea
+  - test_tipo_de_servicio_desconocido_se_rechaza
+  - test_la_estadia_sin_comprobante_no_esta_respaldada
+  - test_el_expediente_declara_si_el_catalogo_esta_confirmado
 
 controls: [CTL-AUDIT]
 limits:
@@ -37,8 +42,10 @@ limits:
   - no_modifica_ni_repone_evidencia
 version: v0.1.0-contrato
 
-# Lo que hay que decidir antes de escribir la primera línea. Un checklist es tan bueno como
-# su catálogo de requisitos, y ese catálogo lo tiene Fleeter, no la arquitectura.
+# El servicio está construido; su catálogo, no confirmado. Cada expediente declara contra qué
+# versión se revisó y si esa versión está confirmada, así que una aprobación con asterisco se
+# ve como lo que es. Confirmar la lista no cambia una línea de código: cambia el YAML.
+catalogo: registry/policies/requisitos-documentales.yaml
 decisiones_pendientes:
   - "Qué documentos exige Fleeter por tipo de servicio (carta porte, POD firmado, evidencia
      fotográfica, comprobante de estadía) — lo define Elias con Nay"

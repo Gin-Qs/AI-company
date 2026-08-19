@@ -2,6 +2,9 @@
 
     python -m services.cli fase0 --datos data/ejemplo            # costo por km y margen real
     python -m services.cli cotizar --ruta R-MTY-CDMX --unidad U-101 --cliente CL-01
+    python -m services.cli facturar --viaje T-1001 --cliente CL-01 --flete 26500 \
+        --documentos orden_de_servicio,carta_porte,pod           # Fase 2
+    python -m services.cli cartera --datos data/ejemplo --corte 2026-06-30
 
 Sin agentes y sin ACT-*: aqui solo corre codigo. `fase0` es el default si no se nombra
 subcomando, para no romper la invocacion documentada de la Fase 0.
@@ -16,7 +19,10 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+from services.ar import cartera_desde_operacion
 from services.common.errors import ErrorDeServicio
+from services.doc_checklist import Documento, revisar as revisar_expediente
+from services.invoicing import EntradaFactura, armar_borrador, conceptos_de_viaje
 from services.masterdata import cargar_catalogo, fecha as parse_fecha
 from services.pipeline import ReporteFase0, ejecutar_fase0
 from services.pricing import Autorizacion, EntradaCotizacion, cotizar, dictaminar
@@ -136,6 +142,143 @@ def render_cotizacion(cotizacion, dictamen) -> str:
     return "\n".join(partes)
 
 
+def render_expediente(expediente) -> str:
+    partes = [_linea("EXPEDIENTE (svc-doc-checklist)")]
+    estado = "COMPLETO" if expediente.completo else "INCOMPLETO"
+    partes.append(
+        f"  viaje {expediente.trip_id}   servicio {expediente.tipo_de_servicio}   {estado}"
+        + ("" if expediente.catalogo_confirmado else "   (catalogo sin confirmar)")
+    )
+    for presente in expediente.presentes:
+        partes.append(f"    ok      {presente.tipo}")
+    for faltante in expediente.faltantes + expediente.vencidos:
+        marca = "FALTA " if faltante.motivo == "falta" else "VENCE "
+        obligatorio = "obligatorio" if faltante.obligatorio else "opcional"
+        partes.append(f"    {marca}  {faltante.tipo:<24} {obligatorio}")
+    for ajeno in expediente.no_corresponden:
+        partes.append(f"    AJENO   {ajeno.tipo} (viaje {ajeno.trip_id or 'sin viaje'})")
+    return "\n".join(partes)
+
+
+def render_borrador(borrador) -> str:
+    partes = [_linea("BORRADOR (svc-invoicing)")]
+    partes.append(f"  {borrador.identificador}   viaje {borrador.trip_id}   receptor {borrador.receptor_rfc}")
+    for concepto in borrador.conceptos:
+        partes.append(
+            f"    {concepto.tipo:<10} {concepto.cantidad:>6} x {concepto.valor_unitario_mxn:>12}"
+            f" = {concepto.importe_mxn:>12}   {concepto.clave_prod_serv}/{concepto.clave_unidad}"
+        )
+    partes.append(f"  {'subtotal':<14} $ {borrador.subtotal_mxn:>14}")
+    partes.append(f"  {'IVA':<14} $ {borrador.iva_mxn:>14}")
+    partes.append(f"  {'retencion':<14} $ {borrador.retencion_mxn:>14}")
+    partes.append(f"  {'TOTAL':<14} $ {borrador.total_mxn:>14}")
+    partes.append("")
+    partes.append("  TIMBRADO: no lo hace el sistema. ACT-DOC-S es CTL-HITL siempre (11.4).")
+    if borrador.assumptions:
+        partes.append(_linea("SUPUESTOS"))
+        for supuesto in borrador.assumptions:
+            partes.append(f"  {supuesto.campo:<22} {supuesto.valor:>10}   {supuesto.detalle}")
+    return "\n".join(partes)
+
+
+def render_cartera(resultado) -> str:
+    cartera = resultado.cartera
+    partes = [_linea("CARTERA (svc-ar)")]
+    partes.append(
+        f"  corte {cartera.corte}   {len(resultado.facturas)} facturas   {len(resultado.pagos)} abonos"
+        f"   rubrica {cartera.rubrica_version}" + ("" if cartera.rubrica_calibrada else " (sin calibrar)")
+    )
+    partes.append("")
+    for tramo, monto in cartera.aging.items():
+        partes.append(f"    {tramo:<12} $ {monto:>14}")
+    partes.append(f"    {'TOTAL':<12} $ {cartera.saldo_total_mxn:>14}   vencido $ {cartera.saldo_vencido_mxn}")
+    if cartera.dias_cartera is not None:
+        partes.append(f"    dias cartera (DSO): {cartera.dias_cartera}")
+    if cartera.sin_identificar_mxn > 0:
+        partes.append(f"    sin identificar:    $ {cartera.sin_identificar_mxn}  (no se reparte; hay que conciliar)")
+
+    if cartera.prioridad:
+        partes.append(_linea("PRIORIDAD DE COBRANZA"))
+        for fila in cartera.prioridad[:10]:
+            partes.append(
+                f"  {fila['factura_id']:<12} {fila['cliente_id']:<7} $ {fila['saldo_mxn']:>12}"
+                f"   {fila['dias_vencido']:>4} dias   {fila['tramo']:<9} {fila['accion']}"
+            )
+    if cartera.flujo_esperado:
+        partes.append(_linea("FLUJO ESPERADO (lo que aun no vence)"))
+        for semana, monto in cartera.flujo_esperado.items():
+            partes.append(f"  {semana}   $ {monto:>14}")
+    partes.append(_linea("SUPUESTOS"))
+    for supuesto in resultado.supuestos:
+        partes.append(f"  - {supuesto}")
+    partes.append(_linea())
+    return "\n".join(partes)
+
+
+def _comando_facturar(args) -> int:
+    """Expediente y borrador. Nunca timbra: eso lo autoriza una persona en la bandeja."""
+    try:
+        catalogo = cargar_catalogo(Path(args.datos) / "catalogo")
+        fecha = parse_fecha(args.fecha) if args.fecha else date.today()
+        documentos = [
+            Documento(tipo=tipo.strip(), trip_id=args.viaje)
+            for tipo in (args.documentos or "").split(",")
+            if tipo.strip()
+        ]
+        expediente = revisar_expediente(
+            trip_id=args.viaje,
+            tipo_de_servicio=args.tipo_servicio,
+            documentos=documentos,
+            fecha_corte=fecha,
+        )
+        print(render_expediente(expediente))
+
+        borrador = armar_borrador(
+            EntradaFactura(
+                trip_id=args.viaje,
+                cliente_id=args.cliente,
+                conceptos=conceptos_de_viaje(
+                    precio_flete_mxn=Decimal(args.flete),
+                    demoras_horas=Decimal(args.demoras) if args.demoras else None,
+                    tarifa_demora_mxn_hora=Decimal(args.tarifa_demora) if args.tarifa_demora else None,
+                    estadias_dias=Decimal(args.estadias) if args.estadias else None,
+                    tarifa_estadia_mxn_dia=Decimal(args.tarifa_estadia) if args.tarifa_estadia else None,
+                ),
+                fecha=fecha,
+                serie=args.serie,
+                trace_id=args.trace or "",
+            ),
+            catalogo,
+            expediente,
+        )
+    except ErrorDeServicio as exc:
+        # Que no se pueda facturar no es un fallo del programa: es la puerta funcionando.
+        print(f"NO SE FACTURA\n  {exc}", file=sys.stderr)
+        return 3
+
+    print(render_borrador(borrador))
+    print(_linea())
+    return 1      # siempre queda esperando una firma humana
+
+
+def _comando_cartera(args) -> int:
+    try:
+        resultado = cartera_desde_operacion(
+            args.datos, corte=parse_fecha(args.corte) if args.corte else date.today()
+        )
+    except ErrorDeServicio as exc:
+        print(f"ERROR {exc}", file=sys.stderr)
+        return 2
+
+    print(render_cartera(resultado))
+    if args.salida_json:
+        destino = Path(args.salida_json)
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_text(json.dumps(resultado.as_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Reporte JSON escrito en {destino}")
+    return 0
+
+
 def _comando_fase0(args) -> int:
     try:
         reporte = ejecutar_fase0(args.datos)
@@ -210,13 +353,38 @@ def main(argv: list[str] | None = None) -> int:
     cot.add_argument("--motivo", help="motivo de la excepcion")
     cot.add_argument("--trace", help="trace_id del caso, para ligar las cifras")
 
+    fac = sub.add_parser("facturar", help="expediente y borrador de comprobante (Fase 2)")
+    fac.add_argument("--datos", default="data/ejemplo")
+    fac.add_argument("--viaje", required=True)
+    fac.add_argument("--cliente", required=True)
+    fac.add_argument("--flete", required=True, help="precio del flete en pesos")
+    fac.add_argument("--documentos", default="", help="tipos separados por coma; ver requisitos-documentales.yaml")
+    fac.add_argument("--tipo-servicio", dest="tipo_servicio", default="carga_general")
+    fac.add_argument("--fecha", help="AAAA-MM-DD; por omision, hoy")
+    fac.add_argument("--serie", help="serie del comprobante; por omision, la de la politica")
+    fac.add_argument("--demoras", help="horas de demora")
+    fac.add_argument("--tarifa-demora", dest="tarifa_demora", help="pesos por hora de demora")
+    fac.add_argument("--estadias", help="dias de estadia")
+    fac.add_argument("--tarifa-estadia", dest="tarifa_estadia", help="pesos por dia de estadia")
+    fac.add_argument("--trace", help="trace_id del caso")
+
+    car = sub.add_parser("cartera", help="aging, prioridad de cobranza y flujo esperado (Fase 2)")
+    car.add_argument("--datos", default="data/ejemplo")
+    car.add_argument("--corte", help="AAAA-MM-DD; por omision, hoy")
+    car.add_argument("--json", dest="salida_json", help="escribe la cartera completa en este archivo")
+
     # Compatibilidad: `--datos ...` sin subcomando sigue siendo la Fase 0.
     argumentos = list(sys.argv[1:] if argv is None else argv)
     if not argumentos or argumentos[0].startswith("-"):
         argumentos = ["fase0", *argumentos]
 
     args = parser.parse_args(argumentos)
-    return _comando_cotizar(args) if args.comando == "cotizar" else _comando_fase0(args)
+    comandos = {
+        "cotizar": _comando_cotizar,
+        "facturar": _comando_facturar,
+        "cartera": _comando_cartera,
+    }
+    return comandos.get(args.comando, _comando_fase0)(args)
 
 
 if __name__ == "__main__":  # pragma: no cover

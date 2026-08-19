@@ -1,0 +1,55 @@
+# Política de facturación — la consume svc-invoicing
+#
+# ESTADO: PROPUESTA. Las tasas son las generales del régimen de autotransporte de carga
+# federal; las series, folios y claves de producto **las confirma Nay** contra lo que hoy
+# emite Fleeter. Mientras `confirmado: false`, ningún borrador se presenta como definitivo.
+#
+# Nada de esto lo decide un modelo, y nada de esto se calcula "por lo general": si el dato
+# fiscal de un cliente falta, el borrador no se arma. Un CFDI con un RFC supuesto es un
+# problema más caro que una factura tardía.
+
+version: v0.1.0
+confirmado: false
+confirma: Nay
+decide: Gabriel
+
+moneda: MXN
+serie_por_defecto: A
+
+impuestos:
+  iva_pct: 16.00
+  # Retención de IVA del autotransporte terrestre de carga: la persona moral que recibe el
+  # servicio retiene el 4% del valor de la contraprestación. Aplica por el régimen del
+  # RECEPTOR, no por el del emisor — por eso se deduce del RFC (12 posiciones = moral).
+  retencion_iva_autotransporte_pct: 4.00
+  aplica_retencion_a: persona_moral
+  supuesto_persona_moral: "RFC de 12 posiciones. Es una deducción del sistema, no un dato capturado"
+
+# Claves del catálogo del SAT por tipo de concepto. La clave de autotransporte de carga
+# (78101800) y la unidad E48 "unidad de servicio" son las que aplican al flete; las demás
+# se confirman con el contador.
+conceptos:
+  flete:
+    clave_prod_serv: "78101800"
+    clave_unidad: E48
+    descripcion: "Servicio de transporte de carga por carretera"
+  demora:
+    clave_prod_serv: "78101800"
+    clave_unidad: HUR
+    descripcion: "Demora en carga o descarga"
+  estadia:
+    clave_prod_serv: "78101800"
+    clave_unidad: DAY
+    descripcion: "Estadía de unidad"
+  maniobra:
+    clave_prod_serv: "78101800"
+    clave_unidad: E48
+    descripcion: "Maniobra de carga o descarga"
+
+# Timbrado: la frontera con el mundo real. Aquí sólo se declara quién puede cruzarla.
+timbrado:
+  # ACT-DOC-S es CTL-HITL siempre por regla dura (§11.4). No hay monto que lo exente.
+  requiere_autorizacion_humana: true
+  quien_timbra: Nay
+  pac: null                  # sin PAC contratado en el sistema: el timbrado sigue siendo manual
+  estado_sin_pac: pendiente_pac

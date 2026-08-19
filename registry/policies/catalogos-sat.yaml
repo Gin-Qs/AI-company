@@ -1,0 +1,62 @@
+# Catálogos del SAT contra los que valida svc-cfdi-validate
+#
+# ESTADO: SUBCONJUNTO FIJADO A MANO. Esto **no** son los catálogos completos del SAT: son las
+# claves que Fleeter usa hoy, escritas y versionadas para que una validación sea reproducible.
+#
+# Por qué fijados y no descargados en cada corrida: un comprobante emitido en mayo se valida
+# contra el catálogo de mayo. Si el validador baja la versión vigente cada vez, el mismo CFDI
+# pasa hoy y falla el mes que entra sin que nadie haya cambiado nada — y ese es exactamente el
+# tipo de fallo que nadie logra reproducir.
+#
+# PENDIENTE DECLARADO: los XSD del SAT no viven en el repositorio. Este servicio valida
+# estructura y catálogo, **no sustituye la validación XSD**, que es requisito antes de timbrar
+# de verdad. Está escrito en docs/fase-2.md y en el contrato del servicio.
+
+version: v0.1.0-subconjunto
+completo: false
+fuente: "Catálogos del SAT vigentes a 2026; recortados a lo que Fleeter emite"
+confirma: Nay
+
+cfdi:
+  versiones_aceptadas: ["4.0"]
+  tipos_comprobante: [I, E, T, N, P]     # Ingreso, Egreso, Traslado, Nomina, Pago
+  monedas: [MXN, USD]
+  formas_pago:
+    "01": Efectivo
+    "03": Transferencia electrónica de fondos
+    "04": Tarjeta de crédito
+    "99": Por definir
+  metodos_pago:
+    PUE: Pago en una sola exhibición
+    PPD: Pago en parcialidades o diferido
+  usos_cfdi:
+    G03: Gastos en general
+    S01: Sin efectos fiscales
+  regimenes_fiscales:
+    "601": General de Ley Personas Morales
+    "612": Personas Físicas con Actividades Empresariales y Profesionales
+    "626": Régimen Simplificado de Confianza
+  claves_prod_serv:
+    "78101800": Transporte de carga por carretera
+    "78101802": Servicios de transporte de carga por carretera a nivel local
+    "78102200": Servicios de embalaje y maniobras
+  claves_unidad:
+    E48: Unidad de servicio
+    HUR: Hora
+    DAY: Día
+    KGM: Kilogramo
+    TNE: Tonelada métrica
+
+carta_porte:
+  versiones_aceptadas: ["3.0", "3.1"]
+  transporte_internacional: ["Sí", "No"]
+  config_autotransporte:
+    VL: Vehículo ligero de carga
+    C2: Camión Unitario (2 llantas en el eje delantero y 4 en el trasero)
+    C3: Camión Unitario (2 llantas en el eje delantero y 6 o más en los traseros)
+    T3S2: Tractocamión articulado
+  tipos_figura:
+    "01": Operador
+    "02": Propietario
+  claves_material:
+    "78101800": Transporte de carga

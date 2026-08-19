@@ -50,3 +50,21 @@ class Supuestos:
 
     def as_list(self) -> list[dict[str, object]]:
         return [s.as_dict() for s in self.items]
+
+
+@dataclass(frozen=True)
+class Autorizacion:
+    """Autorizacion humana explicita para cruzar un gate. Sin esto no hay excepcion.
+
+    Vive en `common` porque la piden dos servicios de fases distintas —svc-pricing para
+    emitir bajo el margen minimo, svc-invoicing para timbrar— y en los dos casos significa
+    exactamente lo mismo: quien autorizo, por que y cuando. Dos dataclases identicas en dos
+    modulos serian dos formas de registrar la misma decision.
+    """
+
+    quien: str
+    motivo: str
+    otorgada: str = ""
+
+    def as_dict(self) -> dict[str, str]:
+        return {"quien": self.quien, "motivo": self.motivo, "otorgada": self.otorgada}

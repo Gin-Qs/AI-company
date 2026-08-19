@@ -1,7 +1,7 @@
 # La oficina virtual
 
-Catorce puestos con nombre, memoria y límites. Nueve consultores que construyen el ERP, tres
-agentes de Tecnología y —desde el cierre de la Fase 1— los dos primeros agentes de operación.
+Dieciséis puestos con nombre, memoria y límites. Nueve consultores que construyen el ERP, tres
+agentes de Tecnología y —desde el cierre de las fases 1 y 2— cuatro agentes de operación.
 Un plano en píxeles para verlos trabajar.
 
 **Ninguno de los doce que están encendidos declara un solo `ACT-*`.** Esa es la propiedad que
@@ -9,9 +9,10 @@ hace seguro encenderlos antes de tiempo: siguen sin poder escribir en la operaci
 documento o mandar un correo. Producen texto y código, que es exactamente lo que hace falta
 para terminar el ERP.
 
-Los otros dos —`D4-03` y `D2-03`— están **`listo`**: contrato completo, prompt escrito, memoria
-puesta y encendido pendiente. `D4-03` sí declara un `ACT-EMAIL-S`, y por eso mismo no se
-enciende hasta cerrar sus condiciones. Ver [fase-1.md](fase-1.md).
+Los otros cuatro —`D4-03`, `D2-03`, `D3-05` y `D2-04`— están **`listo`**: contrato completo,
+prompt escrito, memoria puesta y encendido pendiente. `D4-03` declara un `ACT-EMAIL-S` y `D2-04`
+declara además `ACT-DOC-S`, y por eso mismo no se encienden hasta cerrar sus condiciones. Ver
+[fase-1.md](fase-1.md) y [fase-2.md](fase-2.md).
 
 ## Tres estados, no dos
 
@@ -58,6 +59,8 @@ El adelanto está escrito en el registro, no sólo aquí: cada agente declara `a
 | **Aurora** | `D5-03` | AgentOps | Mira la bitácora de todos: calidad, costo y deriva |
 | **Ivana** | `D4-03` | Pricing y Propuestas | Redacta sobre el precio que calcula `svc-pricing`. Listo, sin encender |
 | **Rubén** | `D2-03` | Costos y Márgenes | Explica el costo por km y el margen que produce la Fase 0. Listo, sin encender |
+| **Sofía** | `D3-05` | Evidencias y Cierre de Viaje | Persigue el papel que falta. Listo, sin encender |
+| **Ximena** | `D2-04` | Ciclo de Ingreso | Prepara el comprobante y sigue la cobranza. Listo, sin encender |
 
 La identidad vive en [`office/identidades.yaml`](../office/identidades.yaml); la autoridad, en
 `registry/`. Cuando se contradigan, manda el registro.

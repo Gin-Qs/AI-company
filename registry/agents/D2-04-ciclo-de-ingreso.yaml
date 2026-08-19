@@ -8,7 +8,7 @@ mission: >
   explica la cartera que svc-ar calcula y da seguimiento a la cobranza con plantillas fijas.
   Ni emite, ni timbra, ni modifica un monto pactado.
 
-estado: planned
+estado: listo
 fase: 2
 model_tier: Medio
 absorbe: [A15]
@@ -17,7 +17,7 @@ cubre_hueco: "facturación — la v1 no tenía agente que cerrara el ciclo opera
 condiciones_encendido:
   - condicion: "svc-invoicing, svc-cfdi-validate y svc-ar construidos y en verde"
     responsable: D5-01
-    cumplida: false
+    cumplida: true
   - condicion: "Muestra de CFDI y Carta Porte reales de Fleeter para probar la validación"
     responsable: Nay
     cumplida: false
@@ -32,16 +32,18 @@ condiciones_encendido:
 invocable_por: [Gabriel, Nay, O1]
 
 tools:
-  - svc-validation
-  - svc-trace
-  - svc-runlog
-  - svc-budget
-tools_planeadas:
   - svc-invoicing
   - svc-cfdi-validate
   - svc-ar
   - svc-doc-checklist
   - svc-notify
+  - svc-masterdata
+  - svc-validation
+  - svc-trace
+  - svc-runlog
+  - svc-budget
+tools_planeadas:
+  - svc-treasury        # fase 3: el cobro esperado alimenta la posición de caja
 
 inputs: [viaje_listo_para_facturar, expediente_de_viaje, pago_aplicado, saldo_vencido]
 outputs: [borrador_de_factura, gestion_de_cobranza, reporte_de_cartera, aviso_a_cliente]
@@ -64,4 +66,6 @@ limits:
   - no_factura_sin_expediente_completo
   - no_prioriza_cartera_por_criterio_propio   # la prioridad la calcula svc-ar
 
-prompt_version: v0.1.0-contrato
+prompt: agents/prompts/D2-04.md
+memoria: agents/memoria/D2-04.md
+prompt_version: v1.0.0

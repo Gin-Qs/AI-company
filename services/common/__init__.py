@@ -7,9 +7,10 @@ from services.common.errors import (
     ErrorDeValidacion,
 )
 from services.common.money import cantidad, cuota, mxn, pct
-from services.common.result import Supuesto
+from services.common.result import Autorizacion, Supuesto
 
 __all__ = [
+    "Autorizacion",
     "EntradaFaltante",
     "ErrorDeServicio",
     "ErrorDeIntegridad",

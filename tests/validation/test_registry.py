@@ -92,11 +92,10 @@ def test_un_agente_listo_sin_condiciones_falla(raiz, tmp_path):
     assert any("D4-03 esta listo sin declarar condiciones_encendido" in f for f in resultados["13"].fallas)
 
 
-# --- Fase 2: preparada, no construida ----------------------------------------
+# --- Fase 2: construida ------------------------------------------------------
 
 
 def test_la_fase_2_esta_declarada_completa(raiz):
-    """Los cinco servicios y los dos agentes existen en el registro antes que su código."""
     registro = validate_registry.cargar_registro(raiz)
     servicios = {sid for sid, s in registro.servicios.items() if s.get("fase") == 2}
     agentes = {aid for aid, a in registro.agentes.items() if a.get("fase") == 2}
@@ -105,34 +104,69 @@ def test_la_fase_2_esta_declarada_completa(raiz):
     assert agentes == {"D3-05", "D2-04"}
 
 
-def test_nada_de_la_fase_2_esta_construido(raiz):
-    """Preparar no es construir: si algo apareciera como `built`, el estado mentiría."""
-    registro = validate_registry.cargar_registro(raiz)
-
-    for identificador, pieza in list(registro.servicios.items()) + list(registro.agentes.items()):
-        if pieza.get("fase") == 2:
-            assert pieza.get("estado") == "planned", identificador
-
-
-def test_cada_servicio_de_la_fase_2_declara_sus_pruebas_y_lo_que_falta_decidir(raiz):
-    """El valor de preparar: el criterio de aceptación y los bloqueos, escritos desde ahora."""
+def test_los_cinco_servicios_de_la_fase_2_estan_construidos(raiz):
     registro = validate_registry.cargar_registro(raiz)
 
     for servicio_id, servicio in registro.servicios.items():
         if servicio.get("fase") != 2:
             continue
-        assert servicio.get("tests"), f"{servicio_id} sin criterio de aceptación"
+        assert servicio["estado"] == "built", servicio_id
+        assert (raiz / servicio["modulo"]).is_dir(), servicio_id
+
+
+def test_los_dos_agentes_de_la_fase_2_estan_listos_sin_encender(raiz):
+    """Los servicios existen; la bandeja de HITL y los datos fiscales, no."""
+    registro = validate_registry.cargar_registro(raiz)
+
+    for agente_id in ("D3-05", "D2-04"):
+        agente = registro.agentes[agente_id]
+        assert agente["estado"] == "listo"
+        pendientes = [c for c in agente["condiciones_encendido"] if not c.get("cumplida")]
+        assert pendientes, f"{agente_id} sin nada pendiente y sin encender"
+
+
+def test_cada_servicio_de_la_fase_2_declara_sus_limites_y_lo_que_falta_decidir(raiz):
+    """Construirlo no cierra las decisiones: los catálogos siguen sin confirmar."""
+    registro = validate_registry.cargar_registro(raiz)
+
+    for servicio_id, servicio in registro.servicios.items():
+        if servicio.get("fase") != 2:
+            continue
+        assert servicio.get("tests"), f"{servicio_id} sin pruebas declaradas"
         assert servicio.get("decisiones_pendientes"), f"{servicio_id} sin decisiones pendientes"
         assert servicio.get("limits"), f"{servicio_id} sin límites"
 
 
-def test_las_pruebas_de_un_servicio_planned_se_reportan_pendientes_no_como_falla(raiz):
-    """La regla que permite preparar una fase sin romper el validador."""
-    resultados = {r.numero: r for r in validate_registry.validar(raiz)}
+def test_el_validador_de_cfdi_declara_que_no_sustituye_al_xsd(raiz):
+    """El límite más importante del servicio vive en su contrato, no sólo en el código."""
+    registro = validate_registry.cargar_registro(raiz)
+
+    assert registro.servicios["svc-cfdi-validate"]["valida_xsd"] is False
+
+
+def test_un_servicio_planned_puede_declarar_pruebas_que_aun_no_existen(raiz, tmp_path):
+    """La regla que permite preparar una fase: pendiente en planned, falla en built."""
+    import shutil
+
+    copia = tmp_path / "repo"
+    shutil.copytree(raiz / "registry", copia / "registry")
+    shutil.copytree(raiz / "tests", copia / "tests", ignore=shutil.ignore_patterns("__pycache__"))
+    suelto = copia / "registry" / "services" / "svc-kpi.yaml"
+    suelto.write_text(
+        "id: svc-kpi\nname: KPI\ntype: deterministic_python\nestado: planned\nfase: 3\n"
+        "consumidores: [D1-03]\ntests:\n  - test_que_nadie_ha_escrito_todavia\n",
+        encoding="utf-8",
+    )
+
+    resultados = {r.numero: r for r in validate_registry.validar(copia)}
 
     assert resultados["7b"].estado == "OK"
-    assert resultados["7b"].pendientes
-    assert all("planned" in p for p in resultados["7b"].pendientes)
+    assert any("test_que_nadie_ha_escrito_todavia" in p for p in resultados["7b"].pendientes)
+
+    suelto.write_text(suelto.read_text(encoding="utf-8").replace("estado: planned", "estado: built"), encoding="utf-8")
+    resultados = {r.numero: r for r in validate_registry.validar(copia)}
+
+    assert resultados["7b"].fallas      # el mismo test declarado, ahora en built, reprueba
 
 
 def test_el_agente_de_facturacion_no_puede_timbrar_solo(raiz):

@@ -49,14 +49,14 @@ tools:
   - svc-trace
   - svc-runlog
   - svc-budget
-tools_planeadas:
-  - svc-notify        # fase 2: hasta que exista, todo correo es CTL-HITL sin excepción
+  - svc-notify        # construido en la Fase 2: ya hay plantilla fija que no pasa por LLM
 
 inputs: [solicitud_cliente, ruta, unidad, operador, volumen, tipo_servicio, descuento_pedido]
 outputs: [cotizacion, propuesta_comercial, email_sugerido]
 
-# ACT-EMAIL-S está declarada pero no otorgada: sin encendido no hay acción posible, y aun
-# encendido el §11.4 la deja en HITL mientras no exista una plantilla fija de svc-notify.
+# ACT-EMAIL-S está declarada pero no otorgada: sin encendido no hay acción posible. Con
+# svc-notify construido, un aviso por plantilla fija deja de ser HITL (§11.4); una propuesta
+# comercial redactada por el modelo sigue siéndolo, y eso es la mayor parte de lo que hace.
 actions:
   - ACT-EMAIL-S
 controls:

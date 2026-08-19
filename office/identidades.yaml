@@ -28,8 +28,11 @@ zonas:
     nombre: "Pricing y Propuestas"
     descripcion: "D4-03. El escritorio está puesto y la silla vacía: listo, sin encender."
   finanzas:
-    nombre: "Costos y Márgenes"
-    descripcion: "D2-03. Mismo caso: contrato completo, encendido pendiente de calibrar."
+    nombre: "Finanzas: Costos y Ciclo de Ingreso"
+    descripcion: "D2-03 y D2-04. Contratos completos, encendido pendiente."
+  operaciones:
+    nombre: "Cierre de Viaje"
+    descripcion: "D3-05 y el archivero de expedientes. Sin papel completo no se factura."
 
 agentes:
   C-01:
@@ -160,3 +163,22 @@ agentes:
     escritorio: {x: 9, y: 2}
     zona: finanzas
     sprite: {piel: "#8d5a3b", pelo: "#3a3a3a", ropa: "#2d5f4f", acento: "#9be6c2", estilo: corto}
+
+  # Fase 2. Mismo caso que los dos de arriba: existen enteros y nadie puede convocarlos.
+  D2-04:
+    nombre: Ximena
+    puesto: "Ciclo de Ingreso: Facturación y Cobranza"
+    lema: "Yo preparo el comprobante. Timbrarlo es de una persona, y siempre lo será."
+    voz: "Arma la factura sobre el expediente y explica la cartera que calcula svc-ar. No reordena la prioridad."
+    escritorio: {x: 9, y: 4}
+    zona: finanzas
+    sprite: {piel: "#e0ac7e", pelo: "#4a2f1d", ropa: "#3d5a80", acento: "#ffd6a5", estilo: chongo}
+
+  D3-05:
+    nombre: Sofía
+    puesto: "Evidencias y Cierre de Viaje"
+    lema: "Un viaje sin papel completo no es un viaje terminado: es un viaje que no se cobra."
+    voz: "Persigue el documento que falta y dice desde cuándo falta. Pide con plantilla fija, no redacta."
+    escritorio: {x: 13, y: 6}
+    zona: operaciones
+    sprite: {piel: "#a86b45", pelo: "#20160f", ropa: "#6b8f3f", acento: "#d9f2a8", estilo: largo}

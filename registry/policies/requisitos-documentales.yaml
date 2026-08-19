@@ -1,0 +1,69 @@
+# Requisitos documentales por tipo de servicio — el catálogo de svc-doc-checklist
+#
+# ESTADO: PROPUESTA, sin confirmar con la operación. La lista de abajo es la que se deduce
+# del organigrama y de cómo cierra hoy un viaje en Fleeter; **la confirma Elias con Nay**.
+# Mientras `confirmado: false`, el servicio funciona y avisa: un expediente aprobado contra
+# un catálogo sin confirmar es una aprobación con asterisco, y el asterisco se ve.
+#
+# Un requisito tiene tres formas de no cumplirse, y las tres son distintas:
+#   falta        el documento no está
+#   vencido      está, pero su vigencia ya pasó a la fecha de corte
+#   no_aplica    está, pero es de otro viaje (o de un tipo que este servicio no pide)
+
+version: v0.1.0
+confirmado: false
+confirma: Elias
+decide: Gabriel
+
+# Días de vigencia por defecto para los documentos que caducan. `null` = no caduca.
+# La carta porte no caduca; la evidencia de entrega tampoco. Lo que caduca son los
+# documentos del vehículo y del operador, que son dato maestro de la flota (fase 5).
+tipos:
+  carta_porte:
+    nombre: "Carta Porte (CFDI de traslado o complemento)"
+    vigencia_dias: null
+  pod:
+    nombre: "Prueba de entrega firmada por el cliente"
+    vigencia_dias: null
+  evidencia_fotografica:
+    nombre: "Fotografía de carga o descarga"
+    vigencia_dias: null
+  comprobante_estadia:
+    nombre: "Comprobante de estadía o demora, firmado"
+    vigencia_dias: null
+  orden_de_servicio:
+    nombre: "Orden de servicio o instrucción del cliente"
+    vigencia_dias: null
+  poliza_seguro_carga:
+    nombre: "Póliza de seguro de la carga"
+    vigencia_dias: 365
+  permiso_sct:
+    nombre: "Permiso SCT de la unidad"
+    vigencia_dias: 365
+
+# Qué exige cada tipo de servicio. `obligatorio: false` documenta que el documento es
+# deseable y no bloquea: la diferencia entre "falta algo" y "no se puede facturar".
+servicios:
+  carga_general:
+    - {tipo: orden_de_servicio, obligatorio: true}
+    - {tipo: carta_porte, obligatorio: true}
+    - {tipo: pod, obligatorio: true}
+    - {tipo: evidencia_fotografica, obligatorio: false}
+  carga_asegurada:
+    - {tipo: orden_de_servicio, obligatorio: true}
+    - {tipo: carta_porte, obligatorio: true}
+    - {tipo: pod, obligatorio: true}
+    - {tipo: poliza_seguro_carga, obligatorio: true}
+    - {tipo: evidencia_fotografica, obligatorio: true}
+  dedicado:
+    - {tipo: orden_de_servicio, obligatorio: true}
+    - {tipo: carta_porte, obligatorio: true}
+    - {tipo: pod, obligatorio: true}
+    - {tipo: comprobante_estadia, obligatorio: false}
+
+# Conceptos que sólo se pueden facturar si existe el documento que los respalda. Es la
+# regla que evita el cobro de una estadía que nadie firmó — y la que evita perderla cuando
+# sí está firmada, que es el caso más común y el más caro.
+respaldo_de_concepto:
+  estadia: comprobante_estadia
+  demora: comprobante_estadia

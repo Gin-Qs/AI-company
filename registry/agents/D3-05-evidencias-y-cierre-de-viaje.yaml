@@ -8,9 +8,8 @@ mission: >
   cuándo está pendiente. No decide si el expediente está completo —eso lo dicta
   svc-doc-checklist— y no factura: entrega el viaje listo para que D2-04 lo facture.
 
-# `planned`: la Fase 2 no ha empezado. El contrato existe desde ahora porque preparar una fase
-# es escribir qué va a hacer cada pieza antes de construirla, no después.
-estado: planned
+# `listo`: sus cinco servicios existen y están en verde; lo que falta no es código suyo.
+estado: listo
 fase: 2
 model_tier: Medio
 absorbe: [A30, A31, A32]
@@ -18,7 +17,7 @@ absorbe: [A30, A31, A32]
 condiciones_encendido:
   - condicion: "svc-doc-checklist construido y en verde"
     responsable: D5-01
-    cumplida: false
+    cumplida: true
   - condicion: "Catálogo de requisitos documentales por tipo de servicio, cargado en svc-masterdata"
     responsable: Elias
     decide: Gabriel
@@ -35,8 +34,8 @@ tools:
   - svc-trace
   - svc-runlog
   - svc-budget
+  - svc-notify          # para pedir el documento faltante con plantilla fija, sin redactar
 tools_planeadas:
-  - svc-notify          # fase 2: para pedir el documento faltante con plantilla fija
   - svc-telemetry       # fase 5: evidencia de llegada y tiempos de estadía
 
 inputs: [viaje_cerrado, documento_recibido, incidencia_de_ruta, tipo_de_servicio]
@@ -55,4 +54,6 @@ limits:
   - no_modifica_evidencia
   - no_declara_completo_lo_que_el_checklist_marca_incompleto
 
-prompt_version: v0.1.0-contrato
+prompt: agents/prompts/D3-05.md
+memoria: agents/memoria/D3-05.md
+prompt_version: v1.0.0
