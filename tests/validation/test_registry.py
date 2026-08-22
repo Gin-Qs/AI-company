@@ -177,3 +177,67 @@ def test_el_agente_de_facturacion_no_puede_timbrar_solo(raiz):
     assert "ACT-DOC-S" in d2_04["actions"]
     assert "CTL-HITL" in d2_04["controls"]
     assert "no_emite_cfdi_sin_hitl" in d2_04["limits"]
+
+
+# --- Fase 3: construida — cierra el corte de MVP (§15) ------------------------
+
+
+def test_la_fase_3_esta_declarada_completa(raiz):
+    registro = validate_registry.cargar_registro(raiz)
+    servicios = {sid for sid, s in registro.servicios.items() if s.get("fase") == 3}
+    agentes = {aid for aid, a in registro.agentes.items() if a.get("fase") == 3}
+
+    assert servicios == {"svc-treasury", "svc-ap", "svc-kpi", "svc-alerts"}
+    assert agentes == {"D1-03"}
+
+
+def test_los_cuatro_servicios_de_la_fase_3_estan_construidos(raiz):
+    registro = validate_registry.cargar_registro(raiz)
+
+    for servicio_id, servicio in registro.servicios.items():
+        if servicio.get("fase") != 3:
+            continue
+        assert servicio["estado"] == "built", servicio_id
+        assert (raiz / servicio["modulo"]).is_dir(), servicio_id
+
+
+def test_el_agente_de_la_fase_3_esta_listo_sin_encender(raiz):
+    """El tablero y el motor de alertas existen; la bandeja de HITL y el umbral, no."""
+    registro = validate_registry.cargar_registro(raiz)
+
+    d1_03 = registro.agentes["D1-03"]
+    assert d1_03["estado"] == "listo"
+    pendientes = [c for c in d1_03["condiciones_encendido"] if not c.get("cumplida")]
+    assert pendientes, "D1-03 sin nada pendiente y sin encender"
+
+
+def test_cada_servicio_de_la_fase_3_declara_sus_limites_y_lo_que_falta_decidir(raiz):
+    registro = validate_registry.cargar_registro(raiz)
+
+    for servicio_id, servicio in registro.servicios.items():
+        if servicio.get("fase") != 3:
+            continue
+        assert servicio.get("tests"), f"{servicio_id} sin pruebas declaradas"
+        assert servicio.get("decisiones_pendientes"), f"{servicio_id} sin decisiones pendientes"
+        assert servicio.get("limits"), f"{servicio_id} sin límites"
+
+
+def test_el_mvp_queda_en_cinco_agentes_y_dieciocho_servicios(raiz):
+    """§15: el corte de MVP. Nada de las fases 4-7 se enciende sin que esto lo demuestre."""
+    registro = validate_registry.cargar_registro(raiz)
+
+    agentes_hasta_fase_3 = {aid for aid, a in registro.agentes.items() if a.get("fase", 99) <= 3}
+    servicios_hasta_fase_3 = {sid for sid, s in registro.servicios.items() if s.get("fase", 99) <= 3}
+
+    assert agentes_hasta_fase_3 == {"D4-03", "D2-03", "D3-05", "D2-04", "D1-03"}
+    assert len(servicios_hasta_fase_3) == 18
+
+
+def test_d1_03_no_declara_ningun_act(raiz):
+    """§9.2, límite duro: D1-03 narra, no ejecuta y no elige el contenido del brief."""
+    registro = validate_registry.cargar_registro(raiz)
+    d1_03 = registro.agentes["D1-03"]
+
+    assert d1_03["actions"] == []
+    assert "no_selecciona_contenido_del_brief" in d1_03["limits"]
+    assert d1_03["model_tier"] == "Bajo"

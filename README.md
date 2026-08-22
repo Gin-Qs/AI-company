@@ -57,8 +57,8 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
   presupuesto, el gate de cotización y los dos primeros agentes de operación.
 - [docs/fase-2.md](docs/fase-2.md) — **la Fase 2 construida**: expediente, comprobante,
   validación del SAT, cartera y avisos por plantilla.
-- [docs/fase-3.md](docs/fase-3.md) — **la Fase 3 preparada**: contratos, orden de construcción,
-  condiciones de entrada y las decisiones que faltan, con dueño.
+- [docs/fase-3.md](docs/fase-3.md) — **la Fase 3 construida**: tesorería, cuentas por pagar,
+  tablero de KPIs y el motor de alertas que decide qué entra al brief.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
 
@@ -82,7 +82,7 @@ corregidos. Detalle en [§17](docs/arquitectura-v3.md#17-estado-de-cierre-de-la-
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
 .venv/Scripts/python -m services.cli fase0 --datos data/ejemplo   # costo por km y margen real
-.venv/Scripts/python -m pytest                                    # 239 pruebas
+.venv/Scripts/python -m pytest                                    # 278 pruebas
 .venv/Scripts/python scripts/validate_registry.py --verbose  # §10.3
 ```
 
@@ -142,21 +142,31 @@ política fiscal y la rúbrica de cobranza siguen **sin confirmar** — cada sal
 de las cinco se cierra escribiendo código: se cierran confirmando un YAML.
 Detalle en [docs/fase-2.md](docs/fase-2.md).
 
-**La Fase 3 está preparada, no construida.** Cuatro servicios y el agente que cierran el corte
-de MVP (§15: 5 agentes IA + 18 servicios), declarados en el registro y sin una línea de código
-nueva:
+**La Fase 3 está construida.** Cuatro servicios más y el agente que cierra el corte de MVP
+(§15: **5 agentes IA + 18 servicios**), otra vez declarado y sin encender:
 
 | | |
 |---|---|
 | `svc-treasury` | Posición de caja, flujo proyectado y días de caja |
-| `svc-ap` | Calendario de pagos, vencimientos y prioridad |
-| `svc-kpi` | Indicadores homologados por departamento, con semáforo |
+| `svc-ap` | Calendario de pagos, vencimientos y prioridad, con rúbrica |
+| `svc-kpi` | Indicadores homologados por departamento, con semáforo contra meta |
 | `svc-alerts` | Motor de reglas: qué alerta se genera y qué entra al brief |
-| `D1-03` | Síntesis Ejecutiva. Declarado, `planned` |
+| `D1-03` | Síntesis Ejecutiva. `listo`, sin encender |
 
-Un servicio `planned` **declara sus pruebas antes de existir**: esos nombres son su criterio de
-aceptación, y el validador los reporta como pendientes hasta que el servicio pase a `built`.
-Qué falta decidir y quién lo decide, en [docs/fase-3.md](docs/fase-3.md).
+```bash
+python -m services.cli brief --datos data/ejemplo --corte 2026-06-30 --saldo-inicial 10000
+```
+
+`brief` sale con código `0`: es informativo, sin gate que bloquear. Lo controlado es qué alerta
+llega al bloque final — exactamente lo que `D1-03` podría narrar, ni una más: `svc-alerts`
+selecciona (§9.2), el agente no elige.
+
+Cuatro cosas que este código declara de sí mismo: el umbral de días de caja mínimo es una
+**propuesta** de 90 días sin calibrar, las metas del tablero de KPIs son **propuestas** sin
+aprobar, `svc-ap` no tiene catálogo de proveedores en `svc-masterdata`, y `data/ejemplo` no
+tiene cuentas por pagar reales — el comando `brief` corre con ese calendario vacío y lo dice.
+Ninguna de las cuatro se cierra escribiendo código: se cierran confirmando un YAML o cargando
+un dato real. Detalle en [docs/fase-3.md](docs/fase-3.md).
 
 **La oficina virtual está abierta otra vez.** La pausa se levantó al cumplirse las dos
 condiciones que ella misma escribía: los cinco servicios en verde y la bitácora del office

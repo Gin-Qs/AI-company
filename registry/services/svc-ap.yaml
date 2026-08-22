@@ -1,10 +1,10 @@
 id: svc-ap
 name: Cuentas por Pagar y Calendario de Pagos
 type: deterministic_python
-estado: planned
+estado: built
 fase: 3
 owner_domain: [02-finanzas]
-modulo: services/ap                     # se crea al construir la fase
+modulo: services/ap
 
 # El espejo de svc-ar del lado de lo que se paga. El §9.1 pone la prioridad de pago en la
 # lista de rankings con consecuencia: la calcula este servicio con una rúbrica versionada,
@@ -26,16 +26,20 @@ outputs:
 
 tests:
   - test_calendario_ordena_por_vencimiento
+  - test_una_cuenta_vencida_entra_al_tramo_correcto
   - test_un_pago_parcial_reduce_el_saldo_no_la_antiguedad
   - test_prioridad_de_pago_sale_de_regla_no_de_criterio
+  - test_un_proveedor_critico_suma_puntos_extra
+  - test_un_pago_sin_referencia_no_se_reparte
   - test_una_cuenta_liquidada_sale_del_calendario
+  - test_flujo_de_sintesis_ejecutiva
 
 controls: [CTL-AUDIT, CTL-LIMIT]
 limits:
   - no_ejecuta_el_pago                        # eso es ACT-PAY de D2-05, fase 4, con doble factor
   - no_reordena_prioridad_por_criterio_propio
   - no_condona_ni_reprograma_vencimiento
-version: v0.1.0-contrato
+version: v1.0.0
 
 rubrica: registry/policies/rubrica-pagos.yaml   # §9.1: todo ranking con consecuencia
 

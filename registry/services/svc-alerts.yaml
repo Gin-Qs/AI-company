@@ -1,10 +1,10 @@
 id: svc-alerts
 name: Motor de Alertas y Selección de Brief
 type: deterministic_python
-estado: planned
+estado: built
 fase: 3
 owner_domain: [01-direccion-y-gobierno]
-modulo: services/alerts                 # se crea al construir la fase
+modulo: services/alerts
 
 # Regla dura del §9.2: este servicio selecciona qué entra al brief diario; D1-03 narra lo
 # seleccionado y no puede omitir ni añadir temas. Si algún día el agente eligiera el
@@ -26,17 +26,27 @@ outputs:
 
 tests:
   - test_liquidez_por_debajo_del_minimo_genera_alerta_alta
-  - test_una_factura_vencida_mas_alla_del_umbral_entra_al_brief
+  - test_una_caja_saludable_no_genera_alerta_de_liquidez
   - test_una_desviacion_de_margen_bajo_el_umbral_no_genera_alerta
+  - test_una_desviacion_de_margen_sobre_el_umbral_genera_alerta_con_la_peor
+  - test_una_factura_vencida_mas_alla_del_umbral_entra_al_brief
   - test_el_mensaje_de_la_alerta_no_pasa_por_llm
   - test_la_severidad_decide_que_entra_al_brief_no_el_agente
+  - test_sin_ninguna_entrada_no_hay_alertas
+  - test_pagos_vencidos_genera_alerta
+  - test_pagos_por_vencer_dentro_de_la_ventana_genera_alerta
+  - test_flujo_de_sintesis_ejecutiva
+  - test_una_alerta_de_severidad_baja_no_llega_al_brief_aunque_exista
+  - test_brief_corre_de_punta_a_punta
+  - test_brief_solo_narra_lo_que_svc_alerts_selecciono
+  - test_brief_sin_saldo_inicial_declarado_usa_cero
 
 controls: [CTL-AUDIT, CTL-POLICY]
 limits:
   - no_redacta_con_llm                        # el mensaje es una plantilla armada con datos
   - no_deja_que_el_agente_elija_el_contenido   # §9.2: D1-03 narra, no selecciona
   - no_dispara_un_act_por_si_mismo             # sólo alerta; ejecutar sigue siendo de otro agente
-version: v0.1.0-contrato
+version: v1.0.0
 
 reglas: registry/policies/alertas.yaml
 

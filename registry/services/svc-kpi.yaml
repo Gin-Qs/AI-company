@@ -1,10 +1,10 @@
 id: svc-kpi
 name: Indicadores y Tablero Ejecutivo
 type: deterministic_python
-estado: planned
+estado: built
 fase: 3
 owner_domain: [01-direccion-y-gobierno]
-modulo: services/kpi                    # se crea al construir la fase
+modulo: services/kpi
 
 # Empaqueta números que ya calculó otro servicio; no calcula ninguno de origen (R2 — un
 # número, una fuente). El margen sigue siendo de svc-profitability, el DSO de svc-ar: este
@@ -27,15 +27,17 @@ outputs:
 tests:
   - test_un_kpi_sin_catalogo_declarado_no_se_reporta
   - test_el_semaforo_compara_contra_la_meta_declarada
+  - test_el_semaforo_funciona_tambien_para_menor_mejor
   - test_el_tablero_agrupa_por_departamento
   - test_un_kpi_no_recalcula_el_numero_solo_lo_empaqueta
+  - test_flujo_de_sintesis_ejecutiva
 
 controls: [CTL-AUDIT, CTL-POLICY]
 limits:
   - no_calcula_la_metrica_solo_la_empaqueta   # R2: un número, una fuente
   - no_reporta_un_kpi_sin_fuente_declarada
   - no_inventa_meta_sin_catalogo
-version: v0.1.0-contrato
+version: v1.0.0
 
 catalogo: registry/policies/kpis.yaml
 

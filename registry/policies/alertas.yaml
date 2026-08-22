@@ -1,0 +1,39 @@
+# Reglas del motor de alertas — las consume svc-alerts
+#
+# §9.2, regla dura: svc-alerts selecciona qué entra al brief diario; D1-03 narra la selección
+# y no puede omitir ni añadir temas. Por eso los umbrales de esta política son código, no
+# criterio de la corrida — y por eso cada alerta que se genera lleva su severidad ya decidida
+# aquí, no en el momento en que alguien la lee.
+#
+# ESTADO: calibrado: false. El umbral de liquidez es una PROPUESTA de 90 días —los 3 meses de
+# costos fijos de la regla dura de authority-gate.yaml ("El fondo de emergencia equivale a 3
+# meses de costos fijos...")— convertidos a días. No es una cifra que Nay y Gabriel hayan
+# confirmado contra caja real todavía.
+
+version: v0.1.0
+calibrado: false
+calibrar_con: "el primer trimestre de caja y cartera reales"
+aprueba: Gabriel
+
+# Severidad mínima que entra al brief diario de D1-03. Una alerta de severidad menor se
+# calcula y se guarda igual, pero no llega a la síntesis ejecutiva — así una alerta "media"
+# no compite por atención con una de liquidez.
+severidad_minima_brief: alta
+
+liquidez:
+  dias_de_caja_minimo: 90       # propuesta: 3 meses de costos fijos (authority-gate.yaml)
+  severidad: alta
+
+margen:
+  brecha_pp_minima: 2.0         # puntos porcentuales bajo el mínimo de tarifa para alertar
+  severidad: alta
+
+cartera:
+  # Reutiliza los cortes de escalamiento de rubrica-cobranza.yaml: no se inventa un segundo
+  # calendario de "cuándo importa" una factura vencida.
+  dias_vencido_alerta_media: 15
+  dias_vencido_alerta_alta: 60
+
+pagos:
+  dias_para_vencer_alerta: 7    # una cuenta por pagar a 7 días o menos, o ya vencida
+  severidad: media

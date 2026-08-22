@@ -1,27 +1,33 @@
 # Fase 3 — Visibilidad ejecutiva
 
-**Preparada, no construida.** Cuatro servicios y un agente declarados en el registro; cero
-líneas de código nuevas y cero agentes encendidos. Cierra el corte de MVP de la arquitectura
-v3 (§15): **5 agentes IA + 18 servicios**.
+**Construida. Cuatro servicios determinísticos y un agente `listo`, sin encender.**
 
-Preparar una fase aquí significa una cosa concreta: **escribir qué va a hacer cada pieza, qué
-pruebas la van a aceptar y qué decisiones faltan, antes de construirla.** Un contrato escrito
-después del código es una descripción; escrito antes es un criterio.
+Las fases 0 a 2 dejaron el costo, el precio y el cobro. Ésta es la primera que no cierra un
+ciclo de operación: cierra un ciclo de **lectura**. Cierra también el corte de MVP de la
+arquitectura v3 (§15): **5 agentes IA + 18 servicios**. Aquí se para y se evalúa — nada de las
+fases 4–7 se enciende sin que el MVP demuestre retorno medible.
 
-| Pieza | Contrato | Qué resuelve |
-|---|---|---|
-| `svc-treasury` | [yaml](../registry/services/svc-treasury.yaml) | Posición de caja, flujo proyectado y días de caja |
-| `svc-ap` | [yaml](../registry/services/svc-ap.yaml) | Calendario de pagos, vencimientos y prioridad |
-| `svc-kpi` | [yaml](../registry/services/svc-kpi.yaml) | Indicadores homologados por departamento, con semáforo |
-| `svc-alerts` | [yaml](../registry/services/svc-alerts.yaml) | Motor de reglas: qué alerta se genera y qué entra al brief |
-| `D1-03` Síntesis Ejecutiva | [yaml](../registry/agents/D1-03-sintesis-ejecutiva.yaml) | Narra el brief diario; no calcula ni selecciona |
+| Pieza | Módulo | Contrato | Qué resuelve |
+|---|---|---|---|
+| `svc-treasury` | [services/treasury/](../services/treasury/) | [yaml](../registry/services/svc-treasury.yaml) | Posición de caja, flujo proyectado y días de caja |
+| `svc-ap` | [services/ap/](../services/ap/) | [yaml](../registry/services/svc-ap.yaml) | Calendario de pagos, vencimientos y prioridad |
+| `svc-kpi` | [services/kpi/](../services/kpi/) | [yaml](../registry/services/svc-kpi.yaml) | Indicadores homologados por departamento, con semáforo |
+| `svc-alerts` | [services/alerts/](../services/alerts/) | [yaml](../registry/services/svc-alerts.yaml) | Motor de reglas: qué alerta se genera y qué entra al brief |
+| `D1-03` Síntesis Ejecutiva | — | [yaml](../registry/agents/D1-03-sintesis-ejecutiva.yaml) | Narra el brief diario; no calcula ni selecciona |
+
+```bash
+python -m services.cli brief --datos data/ejemplo --corte 2026-06-30 --saldo-inicial 10000
+```
+
+`brief` sale con código `0`: es informativo, no hay un gate que bloquee la salida. Lo que sí
+está controlado es qué alerta llega a la sección final — exactamente la misma lista que `D1-03`
+podría narrar, y ni una más.
 
 ## Qué agujero tapa
 
-Las fases 0 a 2 dejaron el costo, el precio y el cobro. Ninguna de las tres deja un lugar donde
-Dirección vea la foto completa sin pedirle a alguien que arme un Excel. Esta fase es la primera
-en no cerrar un ciclo de operación: cierra un ciclo de **lectura**, y es la que hace que el
-retorno de las tres anteriores sea visible todos los días sin esperar a un corte de mes.
+Las fases 0 a 2 dejaron el costo, el precio y el cobro, pero ninguna deja un lugar donde
+Dirección vea la foto completa sin pedirle a alguien que arme un Excel. Esta fase produce esa
+foto todos los días, con las mismas cifras que ya produjo el resto del sistema.
 
 ## El flujo
 
@@ -40,42 +46,38 @@ D1-03           narra el brief con lo que svc-alerts seleccionó y lo que svc-kp
                 no genera un número, no añade ni quita un tema
 ```
 
-## Por qué en este orden
+Probado de punta a punta en
+[tests/integration/test_flujo_fase3.py](../tests/integration/test_flujo_fase3.py), incluido el
+camino en que una alerta se calcula y se guarda pero no llega al brief por su severidad.
 
-1. **`svc-treasury` primero.** Es el único de los cuatro que no depende de otro servicio nuevo
-   de esta fase: consume la normalización bancaria que la Fase 0 ya dejó hecha y el flujo
-   esperado que `svc-ar` ya produce desde la Fase 2.
-2. **`svc-ap`** en paralelo. Es el espejo de `svc-ar` del lado de lo que se paga, y alimenta a
-   `svc-treasury` con el calendario de pagos para el flujo proyectado.
-3. **`svc-alerts`**, que depende de `svc-treasury` y `svc-ap` para tener algo que evaluar.
-4. **`svc-kpi`** al final: empaqueta lo que las tres anteriores —y `svc-profitability` y
-   `svc-ar` desde fases previas— ya calcularon. Sin ellas no tiene qué mostrar.
-5. **`D1-03`** se enciende sobre el resultado de las cuatro. No hay ruta en la que narre antes
-   de que exista lo que va a narrar.
-
-## Lo que va a hacer segura la Fase 3
+## Lo que hace segura la Fase 3
 
 ### El agente no elige qué ve Dirección
 
 `svc-alerts` selecciona qué alerta entra al brief; `D1-03` narra la selección y **no puede
-omitir ni añadir temas** (§9.2, límite duro). Si el modelo eligiera el contenido, el sesgo
-entraría en lo primero que Dirección lee cada día, sin que nadie lo notara. La selección vive
-en reglas versionadas sobre umbrales, no en el criterio de una corrida.
+omitir ni añadir temas** (§9.2, límite duro). Cada `Alerta` calcula su propio
+`entra_al_brief` al construirse, comparando severidad contra `severidad_minima_brief` de
+`registry/policies/alertas.yaml` — no es un campo que se ajuste después ni un criterio de quien
+lea la lista.
+
+[tests/unit/test_cli_fase3.py](../tests/unit/test_cli_fase3.py) prueba exactamente esta forma:
+el comando `brief` calcula una alerta de severidad media y la muestra en el bloque de
+`ALERTAS`, pero esa misma alerta no aparece en el bloque final `BRIEF (lo que D1-03 narraría)`.
 
 ### Un KPI sin fuente declarada no se reporta
 
-`svc-kpi` no calcula ninguna métrica: las toma de quien ya las calculó (`svc-profitability` el
-margen, `svc-ar` el DSO, `svc-treasury` los días de caja) y las homologa con semáforo. Es la
-regla R2 del §9 —**un número, una fuente**— aplicada a la capa de reporte: dos formas de llegar
-al mismo indicador es la manera más rápida de que dos personas defiendan cifras distintas en la
-misma junta.
+`svc-kpi` no calcula ninguna métrica: las toma de quien ya las calculó — `svc-profitability` el
+margen, `svc-ar` el DSO, `svc-treasury` los días de caja — y las homologa con semáforo contra
+la meta de `registry/policies/kpis.yaml`. Es la regla R2 del §9 —**un número, una fuente**—
+aplicada a la capa de reporte. Pedir un KPI que no está en el catálogo levanta `KPIDesconocido`
+en vez de reportar un cero silencioso.
 
 ### El mensaje de la alerta no lo redacta un modelo
 
-Cada alerta que produce `svc-alerts` es una plantilla armada con datos —igual que `svc-notify`
-en la Fase 2—, no texto generado. `D1-03` recibe el mensaje ya armado y lo integra en la
-narrativa del brief; no lo inventa, y no puede citar una cifra que `svc-alerts` no haya
-producido.
+Cada alerta que produce `svc-alerts` es una f-string armada con los datos de la propia alerta
+—igual que `svc-notify` en la Fase 2—, no texto generado. Los mismos datos producen siempre el
+mismo mensaje: es lo que prueba
+`test_el_mensaje_de_la_alerta_no_pasa_por_llm`.
 
 ### El calendario de pagos no ejecuta el pago
 
@@ -84,25 +86,52 @@ producido.
 regla dura de `authority-gate.yaml`. Adelantar la ejecución sería adelantar el riesgo sin
 adelantar el control.
 
-## Condiciones de entrada — lo que tiene que pasar antes de construir
+### El saldo de caja no se inventa
 
-| Condición | Estado | Quién |
-|---|---|---|
-| Fase 2 encendida: `D3-05` y `D2-04` operando, no sólo declarados | **Pendiente** — ver [fase-2.md](fase-2.md) | Nay / Gabriel / `D5-01` |
-| Bandeja única de HITL del ERP en producción | **Pendiente** — `E-001`, el primer hito del backlog | `D5-01` |
-| Saldo inicial de caja real para `svc-treasury` | **Pendiente** — hoy se declara como parámetro | Nay |
-| Umbral de días de caja mínimo, para `svc-alerts` | **Pendiente** — propuesta de 90 días sin confirmar | Nay decide con Gabriel |
-| Catálogo de KPIs con metas aprobadas por departamento | **Pendiente** — hoy son propuestas | Gabriel |
-| Cuentas por pagar reales cargadas para `svc-ap` | **Pendiente** | Nay |
+`svc-treasury` corre el saldo día a día sobre movimientos bancarios reales de `svc-ingest`; el
+saldo inicial se recibe declarado porque no hay integración que lo lea del banco. Sin gasto
+histórico, `dias_de_caja` es `None` — indeterminado, no infinito. Una caja que nunca ha gastado
+no es una caja que "aguanta para siempre".
 
-La primera no es una formalidad de secuencia, igual que en la Fase 2: encender un quinto agente
-sobre una infraestructura de gobierno que todavía no llevó un caso real de punta a punta
-duplica la superficie de error antes de conocerla.
+## Los límites que este código declara de sí mismo
 
-## Decisiones que hay que tomar, con dueño
+| Límite | Dónde se ve |
+|---|---|
+| El umbral de días de caja mínimo es una **propuesta** de 90 días | `calibrado: false` en `alertas.yaml` y en cada `Seleccion.reglas_calibradas` |
+| El umbral de brecha de margen que dispara alerta sigue sin confirmar | mismo archivo, mismo campo |
+| `svc-ap` no tiene catálogo de proveedores en `svc-masterdata` | `dias_credito` se recibe por cuenta, no por consulta — declarado en `decisiones_pendientes` |
+| Las metas del tablero de KPIs son **propuestas**, no aprobadas | `aprobado: false` en `kpis.yaml` |
+| `data/ejemplo` no tiene cuentas por pagar reales | el comando `brief` corre con un calendario de AP vacío, y se dice en el código, no se oculta |
 
-Cada contrato las lleva en su propio `decisiones_pendientes`; aquí están juntas porque son lo
-que de verdad bloquea el arranque:
+Ninguno de los cinco se cierra escribiendo código: se cierran confirmando un YAML o cargando un
+dato real, igual que en la Fase 2.
+
+## El agente: completo y apagado
+
+Igual que en las fases 1 y 2, `D1-03` (Isabel) está en estado **`listo`**: contrato completo,
+prompt escrito, memoria puesta y encendido pendiente. A diferencia de los otros cuatro, no
+declara ningún `ACT-*` — el brief es lectura interna, no comunicación externa — así que su
+`model_tier` es `Bajo`: clasificación y síntesis de alta frecuencia, no juicio de negocio.
+
+| Condición | `D1-03` |
+|---|---|
+| `svc-kpi` y `svc-alerts` construidos y en verde | **Hecho** |
+| Umbral de días de caja mínimo calibrado en `authority-gate.yaml`/`alertas.yaml` | Pendiente — Nay decide con Gabriel |
+| Bandeja única de HITL del ERP en producción | Pendiente — `D5-01` |
+
+La bandeja de HITL vuelve a aparecer aunque `D1-03` no tenga `ACT-*`: es el requisito de
+entrada que comparten las cuatro primeras fases, no una condición atada sólo a quien ejecuta.
+
+## ⬛ Corte de MVP
+
+> **Agentes:** `D4-03`, `D2-03`, `D3-05`, `D2-04`, `D1-03` — los cinco.
+> **Servicios:** los 18 de las fases 0 a 3.
+>
+> Aquí se para y se evalúa. Nada de las fases 4–7 se enciende sin que el MVP demuestre retorno
+> medible: margen protegido en cotizaciones, días de cobro reducidos, brief diario confiable.
+> Si el MVP no lo demuestra, el problema no se arregla añadiendo agentes.
+
+## Decisiones que siguen abiertas, con dueño
 
 | Decisión | Dónde pega | Quién |
 |---|---|---|
@@ -110,33 +139,22 @@ que de verdad bloquea el arranque:
 | Umbral de días de caja mínimo | `svc-alerts` (`registry/policies/alertas.yaml`) | Nay / Gabriel |
 | Umbral de brecha de margen que dispara alerta | `svc-alerts` | Nay |
 | Catálogo de proveedores: no existe en `svc-masterdata` | `svc-ap` | `D5-01` / Nay |
-| Política de priorización de pago | `svc-ap` (`registry/policies/rubrica-pagos.yaml`) | Nay / Gabriel |
+| Política de priorización de pago, proveedores críticos | `svc-ap` (`registry/policies/rubrica-pagos.yaml`) | Nay / Gabriel |
 | Metas por KPI y departamento | `svc-kpi` (`registry/policies/kpis.yaml`) | Gabriel |
 
-Ninguna de las seis se cierra escribiendo código: se cierran confirmando un YAML o cargando un
-dato real, igual que en la Fase 2.
+## Deudas declaradas
 
-## Lo que la Fase 3 no incluye
+* **`svc-ap` no tiene cuentas por pagar reales cargadas.** El servicio está probado con datos
+  sintéticos y el comando `brief` corre con un calendario vacío sobre `data/ejemplo` — una
+  salida válida, no un error, pero no representa lo que la operación paga de verdad.
+* **No entra en esta fase:** estados financieros completos (`svc-financials`, fase 4),
+  escenarios y sensibilidad (`svc-scenarios`, fase 4), y cualquier forma de aprobar o ejecutar
+  un pago (`ACT-PAY`, `D2-05`, fase 4).
 
-Escrito para que no se cuele por el camino:
-
-* **Ejecución de pagos.** `svc-ap` propone; ejecutar es `ACT-PAY` de `D2-05`, fase 4.
-* **Estados financieros completos (EEFF, EBITDA, ROIC).** Es `svc-financials`, fase 4: depende
-  de una contabilidad que esta fase no construye.
-* **Escenarios y sensibilidad.** Es `svc-scenarios`, fase 4.
-* **Estrategia o aprobación de inversión.** Es `D1-01`, fase 7. `D1-03` narra; no recomienda
-  una decisión de dirección.
-* **Identidad en la oficina virtual para `D1-03`.** El contrato existe; el nombre, el
-  escritorio y la memoria se le ponen cuando la fase arranque.
-
-## Cómo se verifica que está preparada
+## Cómo se verifica
 
 ```bash
-python scripts/validate_registry.py --verbose   # 14 reglas en verde, con los pendientes listados
-python -m pytest tests/validation                # el registro de la Fase 3, comprobado
+python -m pytest                                # 278 pruebas
+python scripts/validate_registry.py --verbose   # 14 reglas en verde
+python -m services.cli brief --datos data/ejemplo --corte 2026-06-30 --saldo-inicial 10000
 ```
-
-Los cuatro servicios `planned` **declaran sus pruebas antes de existir**: esos nombres son el
-criterio de aceptación de cada uno. La regla 7b los reporta como pendientes en vez de
-exigirlos —y falla en el momento en que un servicio pase a `built` con una prueba declarada
-que nadie escribió.

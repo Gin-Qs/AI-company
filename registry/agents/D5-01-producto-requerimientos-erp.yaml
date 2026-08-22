@@ -27,8 +27,7 @@ tools:
   - svc-validation      # construido en la Fase 1
   - svc-budget
   - svc-runlog
-tools_planeadas:
-  - svc-kpi
+  - svc-kpi             # construido en la Fase 3
 
 inputs: [proceso_real, dolor_operativo, restriccion_tecnica, entregable_de_consultor]
 outputs: [requerimiento, criterio_de_aceptacion, backlog_priorizado, encargo_a_consultor]

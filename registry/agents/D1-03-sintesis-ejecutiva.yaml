@@ -8,7 +8,8 @@ mission: >
   datos ya verificados. Ningún número lo calcula: los toma de svc-kpi y svc-alerts. No decide
   qué entra al brief —eso lo selecciona svc-alerts, §9.2— y no fija estrategia, que es de D1-01.
 
-estado: planned
+# `listo`: sus dos servicios existen y están en verde; lo que falta no es código suyo.
+estado: listo
 fase: 3
 model_tier: Bajo
 absorbe: [A3]   # narra A4 y A5: los indicadores y las alertas, no los calcula (§15)
@@ -16,7 +17,7 @@ absorbe: [A3]   # narra A4 y A5: los indicadores y las alertas, no los calcula (
 condiciones_encendido:
   - condicion: "svc-kpi y svc-alerts construidos y en verde"
     responsable: D5-01
-    cumplida: false
+    cumplida: true
   - condicion: "Umbral de días de caja mínimo calibrado en registry/policies/alertas.yaml (hoy `calibrado: false`)"
     responsable: Nay
     decide: Gabriel
@@ -28,13 +29,12 @@ condiciones_encendido:
 invocable_por: [Gabriel, Nay, Ana]
 
 tools:
+  - svc-kpi
+  - svc-alerts
   - svc-validation
   - svc-trace
   - svc-runlog
   - svc-budget
-tools_planeadas:
-  - svc-kpi
-  - svc-alerts
 
 inputs: [periodo, tablero_kpi, alertas_seleccionadas]
 outputs: [brief_ejecutivo, sintesis_de_alertas]
@@ -52,4 +52,6 @@ limits:
   - no_omite_ni_anade_temas_del_brief
   - no_decide_estrategia                 # eso es D1-01, que no existe hasta la fase 7
 
-prompt_version: v0.1.0-contrato
+prompt: agents/prompts/D1-03.md
+memoria: agents/memoria/D1-03.md
+prompt_version: v1.0.0
