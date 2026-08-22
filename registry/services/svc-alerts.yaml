@@ -1,0 +1,47 @@
+id: svc-alerts
+name: Motor de Alertas y Selección de Brief
+type: deterministic_python
+estado: planned
+fase: 3
+owner_domain: [01-direccion-y-gobierno]
+modulo: services/alerts                 # se crea al construir la fase
+
+# Regla dura del §9.2: este servicio selecciona qué entra al brief diario; D1-03 narra lo
+# seleccionado y no puede omitir ni añadir temas. Si algún día el agente eligiera el
+# contenido, el sesgo entraría sin que nadie lo notara — por eso la selección es código, no
+# criterio, y el mensaje de cada alerta es una plantilla armada con datos, nunca redacción.
+consumidores: [D1-03]
+# D1-01, D1-02, D3-01..D3-04, D3-06, D4-02, D4-04 también consumen svc-alerts desde sus
+# propias fases (ver arquitectura-v3.md §15); no están en la lista porque no existen todavía.
+
+inputs:
+  - posicion_de_caja           # de svc-treasury
+  - cartera                    # de svc-ar
+  - calendario_de_pagos        # de svc-ap
+  - desviaciones_de_margen     # de svc-profitability
+  - catalogo_de_reglas
+outputs:
+  - lista_de_alertas
+  - seleccion_para_el_brief
+
+tests:
+  - test_liquidez_por_debajo_del_minimo_genera_alerta_alta
+  - test_una_factura_vencida_mas_alla_del_umbral_entra_al_brief
+  - test_una_desviacion_de_margen_bajo_el_umbral_no_genera_alerta
+  - test_el_mensaje_de_la_alerta_no_pasa_por_llm
+  - test_la_severidad_decide_que_entra_al_brief_no_el_agente
+
+controls: [CTL-AUDIT, CTL-POLICY]
+limits:
+  - no_redacta_con_llm                        # el mensaje es una plantilla armada con datos
+  - no_deja_que_el_agente_elija_el_contenido   # §9.2: D1-03 narra, no selecciona
+  - no_dispara_un_act_por_si_mismo             # sólo alerta; ejecutar sigue siendo de otro agente
+version: v0.1.0-contrato
+
+reglas: registry/policies/alertas.yaml
+
+decisiones_pendientes:
+  - "El umbral de días de caja mínimo (registry/policies/alertas.yaml) es una propuesta de 90
+     días —los 3 meses de costos fijos de la regla dura de authority-gate.yaml— y sigue en
+     `calibrado: false` hasta que Nay y Gabriel la confirmen con caja real."
+  - "El umbral de brecha de margen que dispara alerta sigue sin confirmar con Nay."

@@ -1,0 +1,45 @@
+id: svc-treasury
+name: Tesorería y Posición de Caja
+type: deterministic_python
+estado: planned
+fase: 3
+owner_domain: [02-finanzas]
+modulo: services/treasury               # se crea al construir la fase
+
+# Posición de caja, flujo proyectado y días de caja. El servicio no mueve un peso: sólo cuenta
+# lo que ya se movió (svc-ingest) y proyecta lo que otros servicios ya calcularon que va a
+# moverse (svc-ar cobra, svc-ap paga). Dos fuentes para el mismo flujo serían dos flujos.
+consumidores: [D1-03, svc-alerts, svc-kpi]
+# D2-01 Controller Financiero y D2-05 Ciclo de Egreso lo consumen desde la fase 4; no están en
+# la lista porque no existen todavía (roadmap.yaml), no porque el servicio no sirva ahí.
+
+inputs:
+  - movimientos_bancarios      # de svc-ingest: el banco ya se normaliza desde la Fase 0
+  - saldo_inicial_mxn          # declarado; no hay integración con el banco para leerlo
+  - flujo_esperado_de_cobranza # de svc-ar: lo que aún no vence
+  - calendario_de_pagos        # de svc-ap
+  - fecha_de_corte
+outputs:
+  - saldo_actual_mxn
+  - posicion_de_caja_diaria
+  - flujo_proyectado_semanal
+  - dias_de_caja
+
+tests:
+  - test_saldo_corre_dia_a_dia_sobre_los_movimientos
+  - test_el_flujo_proyectado_suma_cobros_y_resta_pagos
+  - test_dias_de_caja_compara_saldo_contra_gasto_promedio
+  - test_un_gasto_diario_promedio_en_cero_no_revienta_el_calculo
+
+controls: [CTL-AUDIT, CTL-LIMIT]
+limits:
+  - no_ejecuta_pagos_ni_transferencias         # eso es ACT-PAY, fase 4, con doble factor
+  - no_inventa_saldo_sin_movimiento_de_origen
+  - no_confunde_flujo_esperado_con_flujo_ya_movido
+version: v0.1.0-contrato
+
+decisiones_pendientes:
+  - "Saldo inicial de caja: hoy se recibe como parámetro que declara Nay; no hay integración
+     bancaria que lo lea de la cuenta real."
+  - "El umbral de días de caja mínimo vive en registry/policies/alertas.yaml y sigue en
+     `calibrado: false` — ver docs/umbrales.md."

@@ -1,0 +1,44 @@
+id: svc-kpi
+name: Indicadores y Tablero Ejecutivo
+type: deterministic_python
+estado: planned
+fase: 3
+owner_domain: [01-direccion-y-gobierno]
+modulo: services/kpi                    # se crea al construir la fase
+
+# Empaqueta números que ya calculó otro servicio; no calcula ninguno de origen (R2 — un
+# número, una fuente). El margen sigue siendo de svc-profitability, el DSO de svc-ar: este
+# servicio los homologa, les pone semáforo contra una meta declarada y los agrupa por
+# departamento. Sin catálogo, un valor no se reporta como KPI.
+consumidores: [D1-03]
+# D1-01, D1-02, D2-01, D3-01..D3-06, D4-02, D4-04, D4-05, D5-01, D5-02, D7-03, D8-01, D8-02 lo
+# consumen desde sus propias fases (ver arquitectura-v3.md §15); no están en la lista porque
+# no existen todavía (roadmap.yaml).
+
+inputs:
+  - valores_por_indicador     # ya calculados por el servicio de origen; svc-kpi no recalcula
+  - periodo
+  - catalogo_de_kpis
+outputs:
+  - tablero_global
+  - tablero_por_departamento
+  - estado_semaforo
+
+tests:
+  - test_un_kpi_sin_catalogo_declarado_no_se_reporta
+  - test_el_semaforo_compara_contra_la_meta_declarada
+  - test_el_tablero_agrupa_por_departamento
+  - test_un_kpi_no_recalcula_el_numero_solo_lo_empaqueta
+
+controls: [CTL-AUDIT, CTL-POLICY]
+limits:
+  - no_calcula_la_metrica_solo_la_empaqueta   # R2: un número, una fuente
+  - no_reporta_un_kpi_sin_fuente_declarada
+  - no_inventa_meta_sin_catalogo
+version: v0.1.0-contrato
+
+catalogo: registry/policies/kpis.yaml
+
+decisiones_pendientes:
+  - "El catálogo de KPIs (registry/policies/kpis.yaml) declara metas propuestas, no
+     aprobadas: falta que Gabriel las confirme por departamento."

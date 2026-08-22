@@ -57,6 +57,8 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
   presupuesto, el gate de cotización y los dos primeros agentes de operación.
 - [docs/fase-2.md](docs/fase-2.md) — **la Fase 2 construida**: expediente, comprobante,
   validación del SAT, cartera y avisos por plantilla.
+- [docs/fase-3.md](docs/fase-3.md) — **la Fase 3 preparada**: contratos, orden de construcción,
+  condiciones de entrada y las decisiones que faltan, con dueño.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
 
@@ -139,6 +141,22 @@ XSD del SAT**, los catálogos son un subconjunto fijado a mano, y el catálogo d
 política fiscal y la rúbrica de cobranza siguen **sin confirmar** — cada salida lo dice. Ninguna
 de las cinco se cierra escribiendo código: se cierran confirmando un YAML.
 Detalle en [docs/fase-2.md](docs/fase-2.md).
+
+**La Fase 3 está preparada, no construida.** Cuatro servicios y el agente que cierran el corte
+de MVP (§15: 5 agentes IA + 18 servicios), declarados en el registro y sin una línea de código
+nueva:
+
+| | |
+|---|---|
+| `svc-treasury` | Posición de caja, flujo proyectado y días de caja |
+| `svc-ap` | Calendario de pagos, vencimientos y prioridad |
+| `svc-kpi` | Indicadores homologados por departamento, con semáforo |
+| `svc-alerts` | Motor de reglas: qué alerta se genera y qué entra al brief |
+| `D1-03` | Síntesis Ejecutiva. Declarado, `planned` |
+
+Un servicio `planned` **declara sus pruebas antes de existir**: esos nombres son su criterio de
+aceptación, y el validador los reporta como pendientes hasta que el servicio pase a `built`.
+Qué falta decidir y quién lo decide, en [docs/fase-3.md](docs/fase-3.md).
 
 **La oficina virtual está abierta otra vez.** La pausa se levantó al cumplirse las dos
 condiciones que ella misma escribía: los cinco servicios en verde y la bitácora del office
