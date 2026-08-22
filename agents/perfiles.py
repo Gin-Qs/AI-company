@@ -79,6 +79,24 @@ class Perfil:
         return True if self.es_consultor else self.estado == "built"
 
     @property
+    def listo(self) -> bool:
+        """Contrato completo y prompt escrito, pero sin encender.
+
+        Es el estado que faltaba entre `planned` y `built`. Un agente `planned` no existe
+        todavia; uno `listo` existe entero y no se convoca porque sus condiciones de encendido
+        —escritas en el registro, no en la cabeza de nadie— no se cumplen aun.
+        """
+        return not self.es_consultor and self.estado == "listo"
+
+    @property
+    def condiciones_encendido(self) -> list[dict]:
+        return [dict(c) for c in (self.registro.get("condiciones_encendido") or [])]
+
+    @property
+    def condiciones_pendientes(self) -> list[dict]:
+        return [c for c in self.condiciones_encendido if not c.get("cumplida")]
+
+    @property
     def habilidades(self) -> list[str]:
         if self.es_consultor:
             return [str(x) for x in (self.registro.get("se_convoca_para") or [])]
@@ -112,6 +130,8 @@ class Perfil:
             "mision": self.mision,
             "estado": self.estado,
             "disponible": self.disponible,
+            "listo": self.listo,
+            "condiciones_encendido": self.condiciones_encendido,
             "zona": self.zona,
             "escritorio": self.escritorio,
             "sprite": self.sprite,

@@ -24,11 +24,11 @@ absorbe: [A47, A48, A49]
 # arquitectura entran cuando su fase llegue (registry/policies/roadmap.yaml).
 tools:
   - svc-masterdata
-tools_planeadas:
-  - svc-kpi
-  - svc-validation
+  - svc-validation      # construido en la Fase 1
   - svc-budget
   - svc-runlog
+tools_planeadas:
+  - svc-kpi
 
 inputs: [proceso_real, dolor_operativo, restriccion_tecnica, entregable_de_consultor]
 outputs: [requerimiento, criterio_de_aceptacion, backlog_priorizado, encargo_a_consultor]

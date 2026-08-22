@@ -140,3 +140,50 @@ def test_nota_vacia_o_de_tipo_invalido_se_rechaza(oficina_temporal):
         memoria_mod.anotar("C-04", "   ")
     with pytest.raises(ValueError):
         memoria_mod.anotar("C-04", "texto", tipo="chisme")
+
+
+# --- agentes listos: completos y sin encender (Fase 1) -----------------------
+
+
+def test_los_dos_agentes_de_la_fase_1_estan_listos_no_construidos():
+    """`listo` es el estado que faltaba: contrato entero, encendido pendiente."""
+    for identificador in ("D4-03", "D2-03"):
+        quien = perfil(identificador)
+        assert quien.listo
+        assert not quien.disponible
+        assert quien.condiciones_pendientes, f"{identificador} listo sin nada pendiente"
+
+
+def test_convocar_a_un_agente_listo_dice_exactamente_que_falta(oficina_temporal):
+    """El rechazo no puede ser 'no disponible': tiene que nombrar la condición y su dueño."""
+    from agents.runtime import AgenteSinEncender
+
+    with pytest.raises(AgenteSinEncender) as excinfo:
+        convocar(**encargo_valido("D4-03", convocado_por="Gabriel"))
+
+    mensaje = str(excinfo.value)
+    assert "Ivana (D4-03)" in mensaje
+    assert "Margen objetivo" in mensaje
+    assert "Nay" in mensaje
+
+
+def test_el_prompt_de_un_agente_listo_se_escribe_igual(oficina_temporal):
+    """Se revisa antes de encenderlo. Un prompt que nadie leyó no está listo."""
+    from agents.runtime import escribir_prompts
+
+    escritos = {p.stem for p in escribir_prompts()}
+
+    assert {"D4-03", "D2-03"} <= escritos
+
+
+def test_el_contexto_del_agente_de_pricing_dice_que_no_calcula_el_precio():
+    contexto = armar_contexto("D4-03")
+
+    assert "no calcula precio" in contexto
+    assert "svc-pricing" in contexto
+    assert "ACT-EMAIL-S" in contexto
+
+
+def test_el_agente_de_costos_no_ejecuta_nada():
+    """D2-03 analiza. Cambiar una tarifa por lo que encuentre es decisión de Dirección."""
+    assert perfil("D2-03").acciones == []

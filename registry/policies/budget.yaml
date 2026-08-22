@@ -1,0 +1,45 @@
+# Presupuesto de modelo por agente (§11.5)
+#
+# "svc-budget impone tope mensual por agente y alerta al 80%. svc-runlog provee el consumo real."
+#
+# Los topes son POR AGENTE Y POR MES, en pesos. Un agente que se pasa no se ralentiza: se
+# detiene, y la siguiente llamada la autoriza una persona. Un presupuesto que sólo avisa es
+# un presupuesto que nadie respeta.
+#
+# ESTADO: sin calibrar. Los topes de abajo son un punto de partida derivado del nivel de
+# modelo de cada agente (§11.5), no de consumo observado — todavía no hay consumo que
+# observar. Se recalibran con el primer mes real de svc-runlog.
+
+version: v1.0.0
+calibrado: false
+moneda: MXN
+alerta_pct: 80          # a partir de aquí, avisa
+corte: duro             # al 100% se detiene y pasa a autorización humana
+
+# Costo de referencia por cada mil tokens, por nivel de modelo. Se actualiza cuando cambia
+# la lista de precios; svc-runlog guarda el costo real de cada paso, así que esto sólo sirve
+# para estimar ANTES de llamar.
+costo_por_mil_tokens:
+  Alto: 1.20
+  Medio: 0.35
+  Bajo: 0.08
+
+# Tope mensual por nivel. Aplica a cualquier agente que no tenga tope propio.
+tope_mensual_por_nivel:
+  Alto: 3000
+  Medio: 1500
+  Bajo: 600
+
+# Topes propios. Un agente con caso de uso conocido no hereda del nivel.
+tope_mensual_por_agente:
+  D4-03: 2500        # cotiza todos los días; es el primero que se enciende
+  D2-03: 1200
+  D5-03: 3000        # AgentOps evalúa muestras de todos los demás
+
+# La capa de consultoría no sale de aquí: §5-bis.1 le da partida separada de proyecto,
+# por invocación. Mezclarlas escondería el costo del ERP dentro del costo de operar.
+presupuesto_consultoria:
+  partida: proyecto-erp
+  por_invocacion: true
+  tope_mensual: 8000
+  autoriza: Gabriel

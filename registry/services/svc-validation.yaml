@@ -1,0 +1,34 @@
+id: svc-validation
+name: QA Transversal por Reglas
+type: deterministic_python
+estado: built
+fase: 1
+owner_domain: [05-tecnologia-datos, 02-finanzas]
+modulo: services/validation
+
+# §7.1: rechaza el entregable si falta alguno de los seis campos del contrato.
+# Lo que no es verificable con una regla no vive aqui: eso lo evalua D5-03 con rubrica (§9.1).
+consumidores: [svc-pricing, D4-03, D2-03, D3-05, D2-04, D5-03]
+
+inputs:
+  - objeto
+  - ambito
+outputs:
+  - dictamen
+  - hallazgos
+  - severidad
+
+tests:
+  - test_entregable_sin_los_seis_campos_se_rechaza
+  - test_decision_con_una_sola_opcion_se_rechaza
+  - test_confianza_declara_que_la_limita
+  - test_cifra_sin_fuente_se_detecta
+  - test_cotizacion_bajo_el_minimo_es_error
+  - test_costeo_incoherente_se_detecta
+  - test_exigir_levanta_con_el_detalle
+
+controls: [CTL-AUDIT]
+limits:
+  - no_corrige_el_entregable
+  - no_juzga_calidad_de_redaccion
+version: v1.0.0

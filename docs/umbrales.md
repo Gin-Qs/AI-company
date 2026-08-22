@@ -43,6 +43,13 @@ Requisito de salida de la Fase 0. Sin esto, la Fase 1 no arranca.
    [fase-0.md](fase-0.md).
 2. `D2-03` (o el análisis humano equivalente, si D2-03 aún no existe) propone `margen_objetivo_pct`
    y `margen_minimo_pct` con la distribución real, no con un supuesto.
+
+   > **Ojo con el círculo:** desde el cierre de la Fase 1, `D2-03` existe declarado pero
+   > apagado, y una de sus condiciones de encendido es justamente que estos dos umbrales estén
+   > calibrados. El paso 2 lo hace **una persona** con la salida de `svc-profitability`; el
+   > agente entra después, a explicar y mantener lo que ya se calibró. Encenderlo para que
+   > calibre su propia condición de encendido sería exactamente el bloqueo circular que este
+   > documento evita en la Fase 0.
 3. Dirección los autoriza. La autorización queda en `svc-runlog`.
 4. Los umbrales de pago, descuento y cobranza se contrastan contra el histórico: si un umbral
    hubiera disparado HITL en más del ~20% de los casos, está mal puesto y genera fatiga de

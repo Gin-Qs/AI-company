@@ -24,6 +24,12 @@ zonas:
   datos:
     nombre: "Datos e Insights"
     descripcion: "Silla vacía hasta la fase 3: sin svc-kpi no hay nada que leer."
+  comercial:
+    nombre: "Pricing y Propuestas"
+    descripcion: "D4-03. El escritorio está puesto y la silla vacía: listo, sin encender."
+  finanzas:
+    nombre: "Costos y Márgenes"
+    descripcion: "D2-03. Mismo caso: contrato completo, encendido pendiente de calibrar."
 
 agentes:
   C-01:
@@ -133,3 +139,24 @@ agentes:
     escritorio: {x: 13, y: 3}
     zona: agentops
     sprite: {piel: "#8d5a3b", pelo: "#c0c0c0", ropa: "#33415c", acento: "#7ee787", estilo: chongo}
+
+  # Los dos primeros agentes de operación de la empresa. Tienen nombre, escritorio y prompt
+  # desde ahora, y la silla vacía hasta que se cumplan sus condiciones de encendido: se ve
+  # distinto de la silla de Paula, que espera una fase entera.
+  D4-03:
+    nombre: Ivana
+    puesto: "Pricing y Propuestas"
+    lema: "El precio ya está calculado. Lo mío es que se entienda y que nadie lo empeore."
+    voz: "Redacta la propuesta sobre la cotización que le dan. Si le piden bajar el margen, remite al gate."
+    escritorio: {x: 9, y: 6}
+    zona: comercial
+    sprite: {piel: "#c98d63", pelo: "#241a12", ropa: "#a8432f", acento: "#ffd166", estilo: largo}
+
+  D2-03:
+    nombre: Rubén
+    puesto: "Costos y Márgenes"
+    lema: "Un margen sin el supuesto que lo sostiene es una cifra bonita."
+    voz: "Lee la salida de svc-costing y explica de dónde sale cada peso. Declara lo que no sabe."
+    escritorio: {x: 9, y: 2}
+    zona: finanzas
+    sprite: {piel: "#8d5a3b", pelo: "#3a3a3a", ropa: "#2d5f4f", acento: "#9be6c2", estilo: corto}

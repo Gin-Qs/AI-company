@@ -99,7 +99,8 @@ def test_estado_resume_el_avance(oficina_temporal):
     assert resumen["abiertos"] == 1
     assert resumen["avance_pct"] == 50
     assert resumen["disponibles"] == 11        # los 9 consultores + D5-01 + D5-03
-    assert resumen["agentes"] == 12            # con la silla vacía de D5-02
+    assert resumen["listos"] == 2              # D4-03 y D2-03: completos y sin encender
+    assert resumen["agentes"] == 14            # con la silla vacía de D5-02
     assert segundo.estado == "pendiente"
 
 
@@ -122,8 +123,46 @@ def test_build_incrusta_un_estado_json_valido(oficina_temporal, tmp_path):
 def test_el_plano_dibuja_a_todos_los_que_tienen_identidad(oficina_temporal):
     estado = construir()
 
-    assert len(estado["agentes"]) == 12
+    assert len(estado["agentes"]) == 14
     for agente in estado["agentes"]:
         assert agente["escritorio"]["x"] is not None
         assert agente["sprite"], f"{agente['id']} sin sprite"
         assert agente["zona"] in estado["zonas"]
+
+
+def test_la_pausa_detiene_las_convocatorias(oficina_temporal, monkeypatch):
+    """Con la oficina en pausa nadie convoca a nadie, ni Dirección."""
+    from agents import runtime
+    from office import estado as estado_mod
+
+    pausa = oficina_temporal / "pausa.yaml"
+    pausa.write_text(
+        "activa: true\ndesde: 2026-08-18\npor: Gabriel\nmotivo: sentar las bases de la Fase 1\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(estado_mod, "PAUSA", pausa)
+
+    with pytest.raises(runtime.OficinaEnPausa) as excinfo:
+        abrir("C-03")
+
+    assert "Gabriel" in str(excinfo.value)
+
+
+def test_en_pausa_todos_aparecen_pausados_menos_la_silla_vacia(oficina_temporal, monkeypatch):
+    """El plano dice lo mismo que el archivo: nadie está tecleando durante una pausa."""
+    from office import estado as estado_mod
+
+    encargo = abrir("C-03")
+    encargos_mod.avanzar(encargo.id, "en_curso", autor="Bruno")
+
+    pausa = oficina_temporal / "pausa.yaml"
+    pausa.write_text("activa: true\ndesde: 2026-08-18\npor: Gabriel\n", encoding="utf-8")
+    monkeypatch.setattr(estado_mod, "PAUSA", pausa)
+
+    estado = construir()
+    por_id = {a["id"]: a for a in estado["agentes"]}
+
+    assert estado["pausa"]["activa"]
+    assert por_id["C-03"]["postura"] == "pausado"      # tenía un encargo en curso
+    assert por_id["D5-02"]["postura"] == "vacante"     # su fase sigue sin llegar
+    assert por_id["C-03"]["encargos"][0]["estado"] == "en_curso"   # el encargo no se pierde

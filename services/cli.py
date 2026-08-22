@@ -1,9 +1,10 @@
-"""Linea de comandos de la Fase 0.
+"""Linea de comandos de la capa deterministica.
 
-    python -m services.cli --datos data/ejemplo
-    python -m services.cli --datos data/ejemplo --json salida.json
+    python -m services.cli fase0 --datos data/ejemplo            # costo por km y margen real
+    python -m services.cli cotizar --ruta R-MTY-CDMX --unidad U-101 --cliente CL-01
 
-Imprime costo por km y margen real. Nada mas. Sin agentes, sin ACT-*.
+Sin agentes y sin ACT-*: aqui solo corre codigo. `fase0` es el default si no se nombra
+subcomando, para no romper la invocacion documentada de la Fase 0.
 """
 
 from __future__ import annotations
@@ -11,10 +12,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from services.common.errors import ErrorDeServicio
+from services.masterdata import cargar_catalogo, fecha as parse_fecha
 from services.pipeline import ReporteFase0, ejecutar_fase0
+from services.pricing import Autorizacion, EntradaCotizacion, cotizar, dictaminar
+from services.trace import Libro
 
 ANCHO = 78
 
@@ -96,12 +102,41 @@ def render(reporte: ReporteFase0) -> str:
     return "\n".join(partes)
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Fase 0 - costo por km y margen real, sin IA.")
-    parser.add_argument("--datos", default="data/ejemplo", help="directorio con catalogo/ y operacion/")
-    parser.add_argument("--json", dest="salida_json", help="escribe el reporte completo en este archivo")
-    args = parser.parse_args(argv)
+def render_cotizacion(cotizacion, dictamen) -> str:
+    """La cotizacion como la leeria una persona: primero quien autoriza, luego los numeros."""
+    partes = [_linea("COTIZACION (svc-pricing)")]
+    partes.append(f"  {cotizacion.cliente_id}  {cotizacion.route_id}  unidad {cotizacion.unit_id}  {cotizacion.fecha}")
+    partes.append("")
+    partes.append(f"  precio          $ {cotizacion.precio_mxn:>12}   tabla {cotizacion.tarifa_id}: $ {cotizacion.precio_tabla_mxn}")
+    partes.append(f"  costo total     $ {cotizacion.costo_mxn:>12}   costo/km $ {cotizacion.costo_por_km}")
+    partes.append(f"  margen          $ {cotizacion.margen_mxn:>12}   {cotizacion.margen_pct}%  (minimo de la ruta {cotizacion.margen_minimo_pct}%)")
+    if cotizacion.descuento_pct > 0:
+        partes.append(f"  descuento         {cotizacion.descuento_pct}%")
+    partes.append("")
+    partes.append(f"  AUTORIZA: {cotizacion.nivel_autorizacion.upper()} ({cotizacion.quien_autoriza})")
+    partes.append(f"  motivo:   {cotizacion.motivo_gate}")
+    if cotizacion.autorizacion:
+        partes.append(f"  excepcion autorizada por {cotizacion.autorizacion.quien}: {cotizacion.autorizacion.motivo}")
 
+    if cotizacion.assumptions:
+        partes.append(_linea("SUPUESTOS"))
+        for supuesto in cotizacion.assumptions:
+            partes.append(f"  {supuesto.campo:<22} {supuesto.valor:>12}   {supuesto.detalle}")
+
+    partes.append(_linea("CIFRAS PARA svc-trace"))
+    for nombre, valor in cotizacion.cifras.items():
+        partes.append(f"  {nombre:<22} {valor:>12}   {cotizacion.fuentes[nombre]}")
+
+    partes.append(_linea("DICTAMEN (svc-validation)"))
+    if dictamen.ok:
+        partes.append("  sin hallazgos")
+    for hallazgo in dictamen.hallazgos:
+        partes.append(f"  [{hallazgo.severidad}] {hallazgo}")
+    partes.append(_linea())
+    return "\n".join(partes)
+
+
+def _comando_fase0(args) -> int:
     try:
         reporte = ejecutar_fase0(args.datos)
     except ErrorDeServicio as exc:
@@ -118,6 +153,70 @@ def main(argv: list[str] | None = None) -> int:
 
     # Un viaje sin costear no es un detalle: es un hueco en la cifra que se va a usar.
     return 1 if reporte.no_costeados or any(not i.ok for i in reporte.ingestas.values()) else 0
+
+
+def _comando_cotizar(args) -> int:
+    try:
+        catalogo = cargar_catalogo(Path(args.datos) / "catalogo")
+        autorizacion = (
+            Autorizacion(quien=args.autoriza, motivo=args.motivo or "autorizacion manual")
+            if args.autoriza
+            else None
+        )
+        libro = Libro(trace_id=args.trace or "TR-CLI")
+        cotizacion = cotizar(
+            EntradaCotizacion(
+                route_id=args.ruta,
+                unit_id=args.unidad,
+                cliente_id=args.cliente,
+                operador_id=args.operador,
+                fecha=parse_fecha(args.fecha) if args.fecha else date.today(),
+                fuel_price=Decimal(args.diesel) if args.diesel else None,
+                descuento_pct=Decimal(args.descuento) if args.descuento else None,
+                precio_propuesto_mxn=Decimal(args.precio) if args.precio else None,
+            ),
+            catalogo,
+            autorizacion=autorizacion,
+            libro=libro,
+        )
+    except ErrorDeServicio as exc:
+        # El bloqueo del gate no es un fallo del programa: es el programa haciendo su trabajo.
+        print(f"NO SE GENERA LA COTIZACION\n  {exc}", file=sys.stderr)
+        return 3
+
+    print(render_cotizacion(cotizacion, dictaminar(cotizacion)))
+    return 0 if not cotizacion.requiere_humano else 1
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Capa deterministica: Fase 0 y Fase 1.")
+    sub = parser.add_subparsers(dest="comando")
+
+    fase0 = sub.add_parser("fase0", help="costo por km y margen real (Fase 0)")
+    fase0.add_argument("--datos", default="data/ejemplo", help="directorio con catalogo/ y operacion/")
+    fase0.add_argument("--json", dest="salida_json", help="escribe el reporte completo en este archivo")
+
+    cot = sub.add_parser("cotizar", help="cotiza una ruta contra la tabla pre-aprobada (Fase 1)")
+    cot.add_argument("--datos", default="data/ejemplo")
+    cot.add_argument("--ruta", required=True)
+    cot.add_argument("--unidad", required=True)
+    cot.add_argument("--cliente", required=True)
+    cot.add_argument("--operador")
+    cot.add_argument("--fecha", help="AAAA-MM-DD; por omision, hoy")
+    cot.add_argument("--diesel", help="precio por litro; por omision, el de referencia del catalogo")
+    cot.add_argument("--descuento", help="porcentaje de descuento sobre la tarifa de tabla")
+    cot.add_argument("--precio", help="precio propuesto en pesos, alternativa a --descuento")
+    cot.add_argument("--autoriza", help="quien autoriza una excepcion bajo el margen minimo")
+    cot.add_argument("--motivo", help="motivo de la excepcion")
+    cot.add_argument("--trace", help="trace_id del caso, para ligar las cifras")
+
+    # Compatibilidad: `--datos ...` sin subcomando sigue siendo la Fase 0.
+    argumentos = list(sys.argv[1:] if argv is None else argv)
+    if not argumentos or argumentos[0].startswith("-"):
+        argumentos = ["fase0", *argumentos]
+
+    args = parser.parse_args(argumentos)
+    return _comando_cotizar(args) if args.comando == "cotizar" else _comando_fase0(args)
 
 
 if __name__ == "__main__":  # pragma: no cover

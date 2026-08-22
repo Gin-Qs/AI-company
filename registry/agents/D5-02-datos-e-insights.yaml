@@ -15,10 +15,10 @@ fase: 7
 model_tier: Medio
 absorbe: [A61]
 
-tools: []
+tools:
+  - svc-trace           # construido en la Fase 1
 tools_planeadas:
   - svc-kpi
-  - svc-trace
   - svc-alerts
   - svc-audit
 

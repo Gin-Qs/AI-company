@@ -1,0 +1,46 @@
+id: svc-pricing
+name: Tarifador
+type: deterministic_python
+estado: built
+fase: 1
+owner_domain: [04-comercial, 02-finanzas]
+modulo: services/pricing
+
+# §4.1 D4-03: "no calcula el precio. El gate de margen minimo es deterministico: una cotizacion
+# bajo el umbral NO PUEDE GENERARSE, no depende de que el LLM lo note."
+# La tabla de precios pre-aprobada de Gabriel se consume como dato maestro; no se reinventa.
+consumidores: [D4-03, D2-03, svc-scenarios]
+
+inputs:
+  - route_id
+  - unit_id
+  - cliente_id
+  - fecha
+  - fuel_price
+  - descuento_pct
+  - precio_propuesto
+outputs:
+  - cotizacion
+  - margen_pct
+  - nivel_autorizacion
+  - motivo_gate
+  - cifras
+  - assumptions
+
+tests:
+  - test_cotizacion_de_tabla_la_puede_hacer_el_agente
+  - test_cotizacion_bajo_el_minimo_no_se_genera
+  - test_autorizacion_de_direccion_permite_la_excepcion
+  - test_descuento_sobre_el_umbral_escala_a_direccion
+  - test_descuento_operativo_va_a_humano
+  - test_sin_tarifa_vigente_no_cotiza
+  - test_tarifa_sin_margen_minimo_bloquea
+  - test_precio_para_margen_objetivo
+  - test_las_cifras_quedan_listas_para_trace
+
+controls: [svc-validation, svc-trace, CTL-LIMIT, CTL-HITL, CTL-AUDIT]
+limits:
+  - no_inventa_la_tabla_de_precios
+  - no_genera_cotizacion_bajo_el_minimo
+  - no_aplica_descuento_sin_umbral
+version: v1.0.0

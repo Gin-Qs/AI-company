@@ -1,0 +1,35 @@
+id: svc-budget
+name: Presupuesto de Modelo por Agente
+type: deterministic_python
+estado: built
+fase: 1
+owner_domain: [05-tecnologia-datos, 02-finanzas]
+modulo: services/budget
+
+# §11.5: tope mensual por agente, alerta al 80%, corte duro al 100%.
+# El consumo real lo provee svc-runlog; aqui solo se compara contra lo autorizado.
+consumidores: [O1, D5-03, D1-01, D2-02, D4-03]
+
+inputs:
+  - agente
+  - nivel_modelo
+  - tokens_estimados
+  - consumo_del_periodo
+outputs:
+  - estado_presupuesto
+  - autorizacion
+  - panorama
+
+tests:
+  - test_alerta_al_80_por_ciento
+  - test_corte_duro_al_llegar_al_tope
+  - test_tope_por_agente_gana_al_nivel
+  - test_costo_estimado_por_nivel
+  - test_panorama_ordena_por_presion
+  - test_consumo_negativo_se_rechaza
+
+controls: [CTL-LIMIT, CTL-AUDIT]
+limits:
+  - no_mide_consumo_por_su_cuenta
+  - no_permite_pasarse_un_poco
+version: v1.0.0

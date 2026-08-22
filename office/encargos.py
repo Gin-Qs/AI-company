@@ -145,6 +145,10 @@ def crear(
         detalle=encargo.titulo,
         autor=convocado_por,
         trace_id=encargo.trace_id,
+        hitl=encargo.hitl,
+        # Un encargo que necesita firma humana entra como caso critico: su SLA en la bandeja
+        # de HITL se mide en horas habiles, no en dias (§7.3).
+        criticidad="alta" if encargo.hitl else "media",
     )
     return encargo
 
@@ -183,6 +187,7 @@ def avanzar(encargo_id: str, nuevo_estado: str, *, autor: str, nota: str = "") -
         detalle=nota or f"{anterior} -> {nuevo_estado}",
         autor=autor,
         trace_id=encargo.trace_id,
+        hitl=encargo.hitl,
     )
     return encargo
 

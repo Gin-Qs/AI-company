@@ -53,6 +53,8 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
 - [docs/umbrales.md](docs/umbrales.md) — estado de calibración del Gate de Autoridad.
 - [docs/fase-0.md](docs/fase-0.md) — **la Fase 0 construida**: cómo se corre, qué datos espera,
   la fórmula de costeo y el requisito de salida hacia la Fase 1.
+- [docs/fase-1.md](docs/fase-1.md) — **la Fase 1 construida**: trazabilidad, validación,
+  presupuesto, el gate de cotización y los dos primeros agentes de operación.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
 
@@ -75,8 +77,8 @@ corregidos. Detalle en [§17](docs/arquitectura-v3.md#17-estado-de-cierre-de-la-
 
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
-.venv/Scripts/python -m services.cli --datos data/ejemplo    # costo por km y margen real
-.venv/Scripts/python -m pytest                               # 63 pruebas
+.venv/Scripts/python -m services.cli fase0 --datos data/ejemplo   # costo por km y margen real
+.venv/Scripts/python -m pytest                                    # 172 pruebas
 .venv/Scripts/python scripts/validate_registry.py --verbose  # §10.3
 ```
 
@@ -84,17 +86,49 @@ Detalle y requisito de salida hacia la Fase 1 en [docs/fase-0.md](docs/fase-0.md
 arranca hasta calibrar margen objetivo y mínimo por ruta con la distribución real que produce
 `svc-profitability` ([umbrales.md](docs/umbrales.md)).
 
-**La oficina virtual está abierta.** Doce puestos listos para construir el ERP: los nueve
-consultores `C-01`…`C-09` más `D5-01` (Producto ERP) y `D5-03` (AgentOps), cada uno con nombre,
-memoria persistente y **cero `ACT-*`** — no pueden tocar la operación, sólo producir texto y
-código.
+**La Fase 1 está construida.** Cinco servicios más y los dos primeros agentes de operación
+declarados enteros —y apagados:
+
+| | |
+|---|---|
+| `svc-runlog` | Registro append-only del camino y el progreso de cada caso, con SLA en horas hábiles |
+| `svc-trace` | Cada cifra con su origen; bloquea el entregable que cita un número sin respaldo |
+| `svc-validation` | Los seis campos del contrato de entregable y las reglas de dominio |
+| `svc-budget` | Tope mensual por agente, alerta al 80%, corte duro al 100% |
+| `svc-pricing` | Precio contra la tabla pre-aprobada, con el gate de margen mínimo |
+| `D4-03` · `D2-03` | Pricing y Costos: declarados, con `ACT-*` sin otorgar y encendido pendiente |
 
 ```bash
-python -m office.cli estado      # quién está haciendo qué
+python -m services.cli cotizar --ruta R-MTY-CDMX --unidad U-101 --cliente CL-01 --operador OP-01
+```
+
+Una cotización bajo el margen mínimo **no se genera**: no depende de que el modelo lo note.
+
+`D4-03` Pricing y `D2-03` Costos existen enteros —contrato, prompt, memoria y escritorio— en un
+estado nuevo, **`listo`**: ni `planned` (no existen) ni `built` (nadie puede convocarlos). El
+runtime rechaza la convocatoria nombrando la condición que falta y quién la cierra, y la regla 13
+del validador falla si un agente `listo` no declara esa lista. Detalle y condiciones de encendido
+en [docs/fase-1.md](docs/fase-1.md).
+
+**La oficina virtual está abierta otra vez.** La pausa se levantó al cumplirse las dos
+condiciones que ella misma escribía: los cinco servicios en verde y la bitácora del office
+migrada a `svc-runlog`. El levantamiento queda en el mismo archivo que la pausa
+([office/pausa.yaml](office/pausa.yaml)) — si el motivo y su cierre vivieran separados, en un mes
+nadie sabría si se levantó por la condición o por prisa.
+
+La bitácora de la oficina **ya no es un registro aparte**: es una vista de `svc-runlog`. Un
+encargo y una cotización se responden desde el mismo archivo, con el mismo `trace_id` y la misma
+máquina de estados. El histórico se importó conservando fecha y trace, sin reescribir el archivo
+viejo:
+
+```bash
+python scripts/migrar_bitacora.py    # idempotente; el JSONL original no se toca
+```
+
+```bash
+python -m office.cli estado      # quién está haciendo qué, y quién está listo sin encender
 python -m office.cli build       # regenera office/oficina.html
 start office/oficina.html        # el plano en píxeles (macOS/Linux: open)
 ```
 
-El plano no es una animación: quien teclea tiene un encargo `en_curso`, quien levanta la mano
-espera una aprobación humana, y la silla vacía es un agente cuya fase no ha llegado. Detalle en
-[docs/oficina-virtual.md](docs/oficina-virtual.md).
+Detalle en [docs/oficina-virtual.md](docs/oficina-virtual.md).

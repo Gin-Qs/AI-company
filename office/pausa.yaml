@@ -1,0 +1,46 @@
+# Pausa de la oficina virtual
+#
+# Una pausa se escribe. No se deja "sin usar y ya": un agente que nadie convoca por
+# descuido y un agente detenido a proposito se ven igual desde fuera, y no son lo mismo.
+#
+# Mientras esta pausa este activa, el runtime rechaza toda convocatoria y el plano lo
+# muestra. Lo que ya esta abierto no se cierra ni se pierde: queda donde estaba.
+#
+# El levantamiento tambien se escribe, y en el mismo archivo: si el motivo y su cierre
+# vivieran en documentos distintos, dentro de un mes nadie sabria si la pausa se levanto
+# porque se cumplio la condicion o porque hacia falta trabajar.
+
+activa: false
+
+historial:
+  - desde: 2026-08-18
+    hasta: 2026-08-18
+    por: Gabriel
+    motivo: >
+      Sentar las bases antes de pulir la capa de agentes. La Fase 1 aporta los cinco servicios
+      determinísticos que todo agente va a necesitar el primer día —trazabilidad de proceso,
+      trazabilidad de cifras, validación, presupuesto y pricing—, y construirlos primero evita
+      que los agentes se apoyen en muletas que después hay que quitar.
+    se_reanudaba_cuando: >
+      Los cinco servicios de la Fase 1 estén construidos y en verde, y la bitácora del office
+      migre a svc-runlog. La capa de agentes se retoma con el gobierno ya puesto.
+    reanudada_porque: >
+      Las dos condiciones se cumplieron. Los cinco servicios están construidos y la suite
+      completa está en verde; la bitácora del office dejó de ser un registro propio y ahora
+      es una vista de svc-runlog, con el histórico importado sin perder fecha ni trace
+      (scripts/migrar_bitacora.py). Ya no hay dos respuestas posibles a "¿qué le pasó a este
+      caso?".
+
+# Lo que NO cambia durante una pausa
+conserva:
+  - "Memorias en agents/memoria/: intactas y versionadas"
+  - "Encargos abiertos en office/encargos/: se quedan en su estado, no se cancelan"
+  - "Bitácora: append-only, no se reescribe"
+  - "Registro: los agentes siguen declarados, con su fase y su razón de adelanto"
+
+# Lo que la reanudación NO enciende. Que la oficina esté abierta no significa que todos
+# puedan trabajar: D4-03 y D2-03 quedan `listo` hasta cerrar sus condiciones de encendido,
+# y el runtime los sigue rechazando con el detalle de cuál falta.
+no_enciende:
+  - "D4-03: margen calibrado y bandeja de HITL en producción"
+  - "D2-03: margen calibrado, bandeja de HITL y un trimestre de viajes cerrados"

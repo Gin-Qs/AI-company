@@ -1,0 +1,55 @@
+id: svc-runlog
+name: Registro del Camino y el Progreso
+type: deterministic_python
+estado: built
+fase: 1
+owner_domain: [05-tecnologia-datos, 01-direccion]
+modulo: services/runlog
+
+# El hueco mas grande de la v1 y la v2. R7: si no esta en la bitacora, no ocurrio.
+# Append-only e inmutable: los casos se reconstruyen plegando eventos, no actualizando filas.
+# `office` entra en la lista al migrar la bitacora de la oficina virtual: dejo de ser un
+# registro propio y paso a ser una vista de este servicio (scripts/migrar_bitacora.py).
+consumidores: [svc-budget, svc-validation, D5-03, D6-04, O1, D4-03, D2-03, office]
+
+inputs:
+  - trace_id
+  - actor
+  - tipo_paso
+  - entradas
+  - salidas
+  - versiones
+  - tokens
+  - costo
+  - gate
+outputs:
+  - caso
+  - progreso
+  - pasos
+  - vencimientos
+  - consumo_por_actor
+  - reintentos_por_actor
+
+tests:
+  - test_caso_recorre_la_maquina_de_estados
+  - test_transicion_invalida_se_rechaza_runlog
+  - test_maximo_dos_reintentos
+  - test_registro_es_append_only
+  - test_progreso_responde_sin_llm
+  - test_consumo_por_actor_alimenta_budget
+  - test_sla_alta_en_horas_habiles
+  - test_hitl_vencido_escala_nunca_aprueba
+  - test_criticidad_baja_expira
+  - test_calendario_corre_en_hora_local
+  - test_la_convocatoria_abre_un_caso_en_svc_runlog
+  - test_el_encargo_y_el_caso_no_pueden_contradecirse
+  - test_cerrar_un_encargo_pasa_por_validacion
+  - test_un_encargo_hitl_pasa_por_la_bandeja_humana
+  - test_la_migracion_conserva_fecha_y_trace
+
+controls: [CTL-AUDIT, CTL-PRIVACY]
+limits:
+  - no_reescribe_eventos
+  - no_auto_aprueba_un_hitl_vencido
+  - no_guarda_pii_sin_redactar
+version: v1.0.0
