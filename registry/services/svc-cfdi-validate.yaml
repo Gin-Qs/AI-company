@@ -1,0 +1,61 @@
+id: svc-cfdi-validate
+name: Validación de CFDI y Carta Porte
+type: deterministic_python
+estado: built
+fase: 2
+owner_domain: [02-finanzas, 06-legal-riesgo]
+modulo: services/cfdi_validate
+
+# La arquitectura es explícita: "un LLM aquí sólo añade riesgo" (§6.2). Es validación contra
+# XSD y reglas del SAT — un dominio donde acertar el 95% de las veces no sirve de nada.
+consumidores: [D2-04, D2-06, D6-02, svc-invoicing]
+
+inputs:
+  - xml_cfdi
+  - complemento_carta_porte
+  - catalogos_sat            # versión declarada, no la vigente al momento de correr
+  - datos_del_viaje
+outputs:
+  - dictamen
+  - errores_de_esquema
+  - errores_de_regla
+  - version_de_catalogo_usada
+
+# `test_xml_que_no_cumple_el_xsd_se_rechaza` se renombró al construirlo: el servicio valida
+# estructura, no XSD, y el nombre de la prueba no puede prometer lo que el código no hace.
+tests:
+  - test_cfdi_valido_pasa
+  - test_estructura_incompleta_se_rechaza
+  - test_lo_que_no_es_un_comprobante_no_se_dictamina
+  - test_carta_porte_sin_mercancia_se_rechaza
+  - test_clave_fuera_de_catalogo_se_detecta
+  - test_el_total_que_no_cuadra_se_detecta
+  - test_el_importe_del_concepto_es_cantidad_por_valor_unitario
+  - test_el_dictamen_declara_la_version_de_catalogo
+  - test_el_dictamen_no_se_presenta_como_validacion_xsd
+  - test_receptor_no_coincide_con_el_cliente_del_viaje
+  - test_un_traslado_sin_complemento_se_detecta_cuando_se_exige
+
+controls: [CTL-AUDIT, CTL-POLICY]
+limits:
+  - no_corrige_el_comprobante
+  - no_timbra
+  - no_da_opinion_fiscal          # §4.1: eso ni siquiera es de D2-06
+  - no_valida_contra_catalogo_sin_version_declarada
+version: v0.1.0-contrato
+
+catalogos: registry/policies/catalogos-sat.yaml
+
+# LÍMITE DECLARADO, y el más importante de todo el contrato: este servicio valida estructura,
+# catálogo y aritmética. **No sustituye la validación XSD del SAT**, que sigue siendo requisito
+# antes de timbrar de verdad. La salida lo dice en cada dictamen (`valida_xsd: false`).
+valida_xsd: false
+
+decisiones_pendientes:
+  - "Versión de CFDI y de Carta Porte contra la que se valida, y de dónde se descargan los
+     XSD y catálogos del SAT (fijados y versionados, no bajados en cada corrida)"
+  - "Muestra de CFDI reales de Fleeter contra los que probar. Sin ella el servicio se
+     construye contra ejemplos de manual, que es exactamente como se pasan por alto las
+     reglas que sí importan"
+  - "Qué se hace con un CFDI ya timbrado que no pasa la validación: cancelación y reemisión
+     es un proceso con reglas propias del SAT y no cabe en este servicio"

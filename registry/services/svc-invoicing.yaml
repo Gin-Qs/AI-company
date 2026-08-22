@@ -1,0 +1,61 @@
+id: svc-invoicing
+name: Emisión y Timbrado
+type: deterministic_python
+estado: built
+fase: 2
+owner_domain: [02-finanzas]
+modulo: services/invoicing
+
+# El hueco más caro de la v1: la operación cerraba viajes y el ingreso se facturaba a mano.
+# Arma el comprobante a partir del viaje cerrado y su expediente; el timbrado con el PAC es
+# la frontera con el mundo real y por eso es ACT-DOC-S, HITL siempre (§11.4).
+consumidores: [D2-04, D2-06, svc-ar]
+
+inputs:
+  - trip_id
+  - cliente_id
+  - conceptos                  # flete, demoras, estadías, maniobras
+  - expediente_completo        # de svc-doc-checklist: sin esto no arma nada
+  - tarifa_aplicada
+  - datos_fiscales_cliente
+outputs:
+  - borrador_de_comprobante
+  - conceptos_facturables
+  - total_y_desglose
+  - folio_y_serie
+  - resultado_de_timbrado
+
+tests:
+  - test_no_factura_viaje_con_expediente_incompleto
+  - test_demoras_y_estadias_entran_como_concepto
+  - test_estadia_sin_comprobante_no_se_cobra
+  - test_total_cuadra_con_la_tarifa_aplicada
+  - test_timbrado_es_hitl_siempre
+  - test_sin_pac_no_finge_haber_timbrado
+  - test_folio_no_se_reutiliza
+  - test_viaje_ya_facturado_no_se_factura_dos_veces
+  - test_la_retencion_depende_del_regimen_del_receptor
+  - test_una_factura_sin_conceptos_no_es_una_factura
+  - test_el_expediente_tiene_que_ser_del_mismo_viaje
+  - test_el_borrador_declara_con_que_politica_se_armo
+  - test_facturar_arma_el_borrador_y_espera_firma
+  - test_facturar_sin_expediente_no_produce_borrador
+
+controls: [CTL-HITL, CTL-AUDIT, CTL-LIMIT]
+limits:
+  - no_timbra_sin_autorizacion_humana
+  - no_modifica_montos_pactados
+  - no_factura_sin_expediente_completo
+  - no_reutiliza_folio
+version: v0.1.0-contrato
+
+politica: registry/policies/facturacion.yaml
+libro_de_folios: data/facturacion/folios.jsonl   # append-only; un folio entregado no se devuelve
+
+# El servicio arma el comprobante entero y se detiene antes del PAC, que no está contratado.
+# Emitir el borrador ya captura la mayor parte del ahorro; el timbrado sigue siendo manual.
+decisiones_pendientes:
+  - "Qué PAC usa Fleeter y con qué credenciales; si el timbrado entra por API o queda fuera
+     del sistema en la Fase 2 (emitir el borrador ya es la mayor parte del ahorro)"
+  - "Catálogo de conceptos, series y folios vigentes — dato maestro, entra por svc-masterdata"
+  - "Cómo se cobran demoras y estadías hoy: tarifa por hora, por día, o negociada por cliente"

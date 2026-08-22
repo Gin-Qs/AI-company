@@ -1,0 +1,71 @@
+id: D2-04
+name: "Ciclo de Ingreso: Facturación y Cobranza"
+department: 02-finanzas-contabilidad-administracion
+teams:
+  - T02-04
+mission: >
+  Convertir viajes cerrados en ingreso cobrado: prepara el comprobante que svc-invoicing arma,
+  explica la cartera que svc-ar calcula y da seguimiento a la cobranza con plantillas fijas.
+  Ni emite, ni timbra, ni modifica un monto pactado.
+
+estado: listo
+fase: 2
+model_tier: Medio
+absorbe: [A15]
+cubre_hueco: "facturación — la v1 no tenía agente que cerrara el ciclo operación → ingreso"
+
+condiciones_encendido:
+  - condicion: "svc-invoicing, svc-cfdi-validate y svc-ar construidos y en verde"
+    responsable: D5-01
+    cumplida: true
+  - condicion: "Muestra de CFDI y Carta Porte reales de Fleeter para probar la validación"
+    responsable: Nay
+    cumplida: false
+  - condicion: "Umbral de cobranza calibrado en authority-gate.yaml (hoy `calibrado: false`)"
+    responsable: Nay
+    decide: Gabriel
+    cumplida: false
+  - condicion: "Bandeja única de HITL del ERP en producción con los SLA de §7.3"
+    responsable: D5-01
+    cumplida: false
+
+invocable_por: [Gabriel, Nay, O1]
+
+tools:
+  - svc-invoicing
+  - svc-cfdi-validate
+  - svc-ar
+  - svc-doc-checklist
+  - svc-notify
+  - svc-masterdata
+  - svc-validation
+  - svc-trace
+  - svc-runlog
+  - svc-budget
+tools_planeadas:
+  - svc-treasury        # fase 3: el cobro esperado alimenta la posición de caja
+
+inputs: [viaje_listo_para_facturar, expediente_de_viaje, pago_aplicado, saldo_vencido]
+outputs: [borrador_de_factura, gestion_de_cobranza, reporte_de_cartera, aviso_a_cliente]
+
+# ACT-DOC-S es HITL siempre por regla dura (§11.4), y ACT-EMAIL-S sólo sale por plantilla fija
+# de svc-notify: fuera de plantilla, también es HITL. Ninguna de las dos está otorgada aún.
+actions:
+  - ACT-DOC-S
+  - ACT-EMAIL-S
+controls:
+  - CTL-HITL
+  - CTL-LIMIT
+  - CTL-CONF
+  - CTL-AUDIT
+
+limits:
+  - no_emite_cfdi_sin_hitl              # §4.1, límite duro
+  - no_envia_cobranza_externa_fuera_de_plantilla
+  - no_modifica_montos
+  - no_factura_sin_expediente_completo
+  - no_prioriza_cartera_por_criterio_propio   # la prioridad la calcula svc-ar
+
+prompt: agents/prompts/D2-04.md
+memoria: agents/memoria/D2-04.md
+prompt_version: v1.0.0

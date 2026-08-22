@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CFDI 4.0 de ingreso con complemento Carta Porte 3.1, construido a mano para las pruebas.
+  Las cifras son las del viaje T-1001 de data/ejemplo: flete de 26,500 + IVA 16% - retencion
+  del 4% de autotransporte = 29,680. Si svc-invoicing cambia el calculo, esta prueba lo dice.
+
+  NO es un CFDI timbrado: no trae TimbreFiscalDigital, sello ni certificado. Eso es del PAC.
+-->
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4"
+                  xmlns:cartaporte31="http://www.sat.gob.mx/CartaPorte31"
+                  Version="4.0"
+                  Serie="A"
+                  Folio="1"
+                  Fecha="2026-06-01T12:00:00"
+                  FormaPago="03"
+                  MetodoPago="PPD"
+                  Moneda="MXN"
+                  TipoDeComprobante="I"
+                  Exportacion="01"
+                  LugarExpedicion="64000"
+                  SubTotal="26500.00"
+                  Total="29680.00">
+  <cfdi:Emisor Rfc="FLE210101AB1" Nombre="Fleeter Logistica SA de CV" RegimenFiscal="601"/>
+  <cfdi:Receptor Rfc="ANO910415AB1"
+                 Nombre="Aceros del Norte SA de CV"
+                 DomicilioFiscalReceptor="64000"
+                 RegimenFiscalReceptor="601"
+                 UsoCFDI="G03"/>
+  <cfdi:Conceptos>
+    <cfdi:Concepto ClaveProdServ="78101800"
+                   ClaveUnidad="E48"
+                   Cantidad="1"
+                   Descripcion="Servicio de transporte de carga por carretera"
+                   ValorUnitario="26500.00"
+                   Importe="26500.00"
+                   ObjetoImp="02"/>
+  </cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="4240.00" TotalImpuestosRetenidos="1060.00"/>
+  <cfdi:Complemento>
+    <cartaporte31:CartaPorte Version="3.1" TranspInternac="No" TotalDistRec="930">
+      <cartaporte31:Ubicaciones>
+        <cartaporte31:Ubicacion TipoUbicacion="Origen" RFCRemitenteDestinatario="ANO910415AB1"/>
+        <cartaporte31:Ubicacion TipoUbicacion="Destino" RFCRemitenteDestinatario="ANO910415AB1" DistanciaRecorrida="930"/>
+      </cartaporte31:Ubicaciones>
+      <cartaporte31:Mercancias PesoBrutoTotal="24000" UnidadPeso="KGM" NumTotalMercancias="1" TotalDistRec="930">
+        <cartaporte31:Mercancia BienesTransp="78101800" Descripcion="Acero laminado" Cantidad="1" ClaveUnidad="TNE" PesoEnKg="24000">
+          <cartaporte31:CantidadTransporta Cantidad="1" IDOrigen="OR000001" IDDestino="DE000001"/>
+        </cartaporte31:Mercancia>
+        <cartaporte31:Autotransporte PermSCT="TPAF01" NumPermisoSCT="1234567890">
+          <cartaporte31:IdentificacionVehicular ConfigVehicular="T3S2" PlacaVM="ABC1234" AnioModeloVM="2022"/>
+          <cartaporte31:Seguros AseguraRespCivil="Seguros del Norte" PolizaRespCivil="POL-99871"/>
+        </cartaporte31:Autotransporte>
+      </cartaporte31:Mercancias>
+      <cartaporte31:FiguraTransporte>
+        <cartaporte31:TiposFigura TipoFigura="01" RFCFigura="XAXX010101000" NombreFigura="Juan Perez" NumLicencia="MTY9988771"/>
+      </cartaporte31:FiguraTransporte>
+    </cartaporte31:CartaPorte>
+  </cfdi:Complemento>
+</cfdi:Comprobante>

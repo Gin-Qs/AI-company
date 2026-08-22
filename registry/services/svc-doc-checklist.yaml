@@ -1,0 +1,52 @@
+id: svc-doc-checklist
+name: Completitud Documental del Viaje
+type: deterministic_python
+estado: built
+fase: 2
+owner_domain: [03-operaciones, 02-finanzas]
+modulo: services/doc_checklist
+
+# La primera de las dos puertas del ciclo operación → ingreso: sin expediente completo no se
+# factura. Es una lista de presencia y vigencia, no un juicio: qué documento falta, cuál está
+# vencido y cuál no corresponde a este viaje. Ninguna de esas tres preguntas necesita un LLM.
+consumidores: [D3-05, D2-04, D2-06, svc-invoicing]
+
+inputs:
+  - trip_id
+  - tipo_de_servicio
+  - documentos_del_viaje     # tipo, folio, fecha, hash del archivo
+  - catalogo_de_requisitos   # qué exige cada tipo de servicio, desde svc-masterdata
+outputs:
+  - expediente_completo      # booleano duro: es la condición de facturación
+  - faltantes
+  - vencidos
+  - no_corresponden
+  - listo_para_facturar
+
+tests:
+  - test_expediente_completo_libera_facturacion
+  - test_falta_evidencia_de_entrega_bloquea
+  - test_documento_vencido_no_cuenta_como_presente
+  - test_la_vigencia_se_deriva_de_la_emision_cuando_no_viene_impresa
+  - test_documento_de_otro_viaje_se_rechaza
+  - test_requisitos_dependen_del_tipo_de_servicio
+  - test_un_opcional_ausente_no_bloquea
+  - test_tipo_de_servicio_desconocido_se_rechaza
+  - test_la_estadia_sin_comprobante_no_esta_respaldada
+  - test_el_expediente_declara_si_el_catalogo_esta_confirmado
+
+controls: [CTL-AUDIT]
+limits:
+  - no_juzga_el_contenido_del_documento    # presencia y vigencia, no interpretación
+  - no_libera_con_faltantes
+  - no_modifica_ni_repone_evidencia
+version: v0.1.0-contrato
+
+# El servicio está construido; su catálogo, no confirmado. Cada expediente declara contra qué
+# versión se revisó y si esa versión está confirmada, así que una aprobación con asterisco se
+# ve como lo que es. Confirmar la lista no cambia una línea de código: cambia el YAML.
+catalogo: registry/policies/requisitos-documentales.yaml
+decisiones_pendientes:
+  - "Qué documentos exige Fleeter por tipo de servicio (carta porte, POD firmado, evidencia
+     fotográfica, comprobante de estadía) — lo define Elias con Nay"
+  - "Dónde viven los archivos y qué se guarda: ruta, hash, o el archivo mismo (afecta CTL-PRIVACY)"

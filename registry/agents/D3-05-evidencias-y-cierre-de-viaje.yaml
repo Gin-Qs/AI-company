@@ -1,0 +1,59 @@
+id: D3-05
+name: Evidencias y Cierre de Viaje
+department: 03-operaciones-logisticas
+teams:
+  - T03-06
+mission: >
+  Cerrar el viaje con su expediente completo: qué documento falta, a quién se le pide y desde
+  cuándo está pendiente. No decide si el expediente está completo —eso lo dicta
+  svc-doc-checklist— y no factura: entrega el viaje listo para que D2-04 lo facture.
+
+# `listo`: sus cinco servicios existen y están en verde; lo que falta no es código suyo.
+estado: listo
+fase: 2
+model_tier: Medio
+absorbe: [A30, A31, A32]
+
+condiciones_encendido:
+  - condicion: "svc-doc-checklist construido y en verde"
+    responsable: D5-01
+    cumplida: true
+  - condicion: "Catálogo de requisitos documentales por tipo de servicio, cargado en svc-masterdata"
+    responsable: Elias
+    decide: Gabriel
+    cumplida: false
+  - condicion: "Bandeja única de HITL del ERP en producción con los SLA de §7.3"
+    responsable: D5-01
+    cumplida: false
+
+invocable_por: [Gabriel, Elias, O1]
+
+tools:
+  - svc-doc-checklist
+  - svc-validation
+  - svc-trace
+  - svc-runlog
+  - svc-budget
+  - svc-notify          # para pedir el documento faltante con plantilla fija, sin redactar
+tools_planeadas:
+  - svc-telemetry       # fase 5: evidencia de llegada y tiempos de estadía
+
+inputs: [viaje_cerrado, documento_recibido, incidencia_de_ruta, tipo_de_servicio]
+outputs: [expediente_de_viaje, faltante_documental, viaje_listo_para_facturar, aviso_a_operador]
+
+# Cero ACT-* en la Fase 2: pedir un documento faltante sale por plantilla fija de svc-notify,
+# que no es texto libre. Si algún día redacta el mensaje, necesita ACT-EMAIL-S con HITL.
+actions: []
+controls:
+  - CTL-AUDIT
+  - CTL-POLICY
+
+limits:
+  - no_factura                          # §4.1: es de D2-04, y sólo con expediente completo
+  - no_libera_cierre_con_faltantes
+  - no_modifica_evidencia
+  - no_declara_completo_lo_que_el_checklist_marca_incompleto
+
+prompt: agents/prompts/D3-05.md
+memoria: agents/memoria/D3-05.md
+prompt_version: v1.0.0

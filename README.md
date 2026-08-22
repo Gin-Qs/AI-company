@@ -55,6 +55,8 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
   la fórmula de costeo y el requisito de salida hacia la Fase 1.
 - [docs/fase-1.md](docs/fase-1.md) — **la Fase 1 construida**: trazabilidad, validación,
   presupuesto, el gate de cotización y los dos primeros agentes de operación.
+- [docs/fase-2.md](docs/fase-2.md) — **la Fase 2 construida**: expediente, comprobante,
+  validación del SAT, cartera y avisos por plantilla.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
 
@@ -78,7 +80,7 @@ corregidos. Detalle en [§17](docs/arquitectura-v3.md#17-estado-de-cierre-de-la-
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
 .venv/Scripts/python -m services.cli fase0 --datos data/ejemplo   # costo por km y margen real
-.venv/Scripts/python -m pytest                                    # 172 pruebas
+.venv/Scripts/python -m pytest                                    # 239 pruebas
 .venv/Scripts/python scripts/validate_registry.py --verbose  # §10.3
 ```
 
@@ -109,6 +111,34 @@ estado nuevo, **`listo`**: ni `planned` (no existen) ni `built` (nadie puede con
 runtime rechaza la convocatoria nombrando la condición que falta y quién la cierra, y la regla 13
 del validador falla si un agente `listo` no declara esa lista. Detalle y condiciones de encendido
 en [docs/fase-1.md](docs/fase-1.md).
+
+**La Fase 2 está construida.** Cinco servicios más y los dos agentes que cierran el ciclo
+operación → ingreso, otra vez declarados y sin encender:
+
+| | |
+|---|---|
+| `svc-doc-checklist` | Si el expediente del viaje está completo. Sin él no hay factura |
+| `svc-invoicing` | El comprobante armado entero; timbrarlo es `ACT-DOC-S`: HITL siempre |
+| `svc-cfdi-validate` | Estructura, catálogo y aritmética del CFDI y la Carta Porte |
+| `svc-ar` | Aging que no rejuvenece, prioridad con rúbrica y flujo esperado |
+| `svc-notify` | Plantillas fijas con variables validadas, sin LLM en el camino |
+| `D3-05` · `D2-04` | Evidencias y Cierre · Ciclo de Ingreso. `listo`, sin encender |
+
+```bash
+python -m services.cli facturar --viaje T-1001 --cliente CL-01 --flete 26500 \
+    --documentos orden_de_servicio,carta_porte,pod --fecha 2026-06-01
+python -m services.cli cartera --datos data/ejemplo --corte 2026-06-30
+```
+
+`facturar` **nunca sale con 0**: el comprobante queda esperando una firma humana. Un viaje sin
+expediente completo no llega siquiera a tener borrador, y no quema un folio en el intento.
+
+Cinco cosas que este código declara de sí mismo, porque un servicio que se presenta como más
+completo de lo que es da permiso para no mirar: `svc-cfdi-validate` **no sustituye la validación
+XSD del SAT**, los catálogos son un subconjunto fijado a mano, y el catálogo documental, la
+política fiscal y la rúbrica de cobranza siguen **sin confirmar** — cada salida lo dice. Ninguna
+de las cinco se cierra escribiendo código: se cierran confirmando un YAML.
+Detalle en [docs/fase-2.md](docs/fase-2.md).
 
 **La oficina virtual está abierta otra vez.** La pausa se levantó al cumplirse las dos
 condiciones que ella misma escribía: los cinco servicios en verde y la bitácora del office

@@ -1,0 +1,34 @@
+# Rúbrica de prioridad de cobranza — la consume svc-ar
+#
+# El §9.1 pone la prioridad de cobranza en la lista de rankings con consecuencia: los produce
+# un servicio con una rúbrica versionada, no el criterio de un modelo ni el de quien tenga el
+# teléfono a la mano. Un cliente al que se le aprieta primero es una decisión con efecto
+# comercial, y tiene que poder explicarse con los mismos números para todos.
+#
+# La versión viaja en cada salida. Si mañana se cambia un peso, los rankings de ayer siguen
+# siendo reproducibles — y la comparación entre meses no se rompe en silencio.
+
+version: v0.1.0
+calibrado: false
+calibrar_con: "los primeros tres meses de cartera real"
+aprueba: Gabriel
+
+# Puntos por peso vencido y por día de atraso. La suma ordena; el desempate es por saldo.
+pesos:
+  saldo_vencido_mxn: 1.0        # 1 punto por cada peso vencido
+  por_dia_vencido: 250.0        # 1 día de atraso pesa como $250 de saldo
+  cliente_sin_credito: 5000.0   # cobrar de contado y no haber cobrado es peor que un plazo
+
+# Cortes del aging, en días vencidos. El primero es "corriente": aún no vence.
+tramos:
+  - {nombre: corriente, desde: null, hasta: 0}
+  - {nombre: "1-30",    desde: 1,    hasta: 30}
+  - {nombre: "31-60",   desde: 31,   hasta: 60}
+  - {nombre: "61-90",   desde: 61,   hasta: 90}
+  - {nombre: "90+",     desde: 91,   hasta: null}
+
+# A partir de aquí la cobranza deja de ser recordatorio. No autoriza nada por sí solo: es el
+# umbral que dispara el HITL de D2-04 (authority-gate.yaml -> umbrales.cobranza).
+escalamiento:
+  dias_para_gestion_humana: 15
+  dias_para_direccion: 60

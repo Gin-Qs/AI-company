@@ -1,0 +1,52 @@
+id: svc-ar
+name: Cartera y Cobranza
+type: deterministic_python
+estado: built
+fase: 2
+owner_domain: [02-finanzas]
+modulo: services/ar
+
+# Aging, riesgo y flujo esperado. La prioridad de cobranza la calcula este servicio, no el
+# agente: §9.1 lo pone en la lista de rankings con consecuencia, que son determinísticos.
+consumidores: [D2-04, D2-01, svc-treasury, svc-alerts]
+
+inputs:
+  - facturas_emitidas
+  - pagos_aplicados          # de svc-ingest: el banco ya se normaliza en la Fase 0
+  - dias_credito_cliente     # de svc-masterdata
+  - fecha_de_corte
+outputs:
+  - aging_por_cliente        # corriente, 1-30, 31-60, 61-90, 90+
+  - saldo_vencido
+  - prioridad_de_cobranza
+  - flujo_esperado
+  - dias_cartera             # DSO
+
+tests:
+  - test_aging_reparte_por_antiguedad
+  - test_pago_parcial_reduce_el_saldo_no_la_antiguedad
+  - test_un_pago_sin_referencia_no_se_reparte
+  - test_la_referencia_bancaria_con_el_folio_si_concilia
+  - test_prioridad_sale_de_regla_no_de_criterio
+  - test_la_accion_escala_con_los_dias_vencidos
+  - test_dias_credito_del_cliente_mueven_el_vencimiento
+  - test_flujo_esperado_no_cuenta_lo_ya_cobrado
+  - test_dias_cartera_se_calcula_contra_las_ventas_del_periodo
+  - test_una_factura_liquidada_sale_de_la_cartera
+  - test_cartera_desde_la_operacion_declara_sus_supuestos
+  - test_cartera_por_linea_de_comandos
+
+controls: [CTL-AUDIT, CTL-LIMIT]
+limits:
+  - no_condona_ni_reestructura
+  - no_ordena_cobranza_externa       # eso es ACT-EMAIL-S de D2-04, con plantilla
+  - no_prioriza_sin_regla_versionada
+version: v0.1.0-contrato
+
+rubrica: registry/policies/rubrica-cobranza.yaml   # §9.1: todo ranking con consecuencia
+
+decisiones_pendientes:
+  - "Política de días de cobranza: el umbral `cobranza` de authority-gate.yaml sigue en
+     `calibrado: false` y sus valores son propuestas, no política (ver umbrales.md)"
+  - "Cómo se concilia un pago con su factura cuando el banco no trae referencia — es el caso
+     normal, no la excepción"
