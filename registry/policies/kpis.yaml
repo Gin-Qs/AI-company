@@ -1,0 +1,67 @@
+# Catálogo de KPIs — lo consume svc-kpi
+#
+# R2 (§9): un número, una fuente. Cada KPI declara qué servicio ya lo calculó; svc-kpi no
+# recalcula ninguno, sólo lo homologa, le pone semáforo contra la meta de esta lista y lo
+# agrupa por departamento. Un valor que llega sin entrada aquí no se reporta como KPI —se
+# reporta el error, no un número sin origen.
+#
+# Las metas son PROPUESTAS: Gabriel no las ha confirmado por departamento (ver
+# decisiones_pendientes de svc-kpi.yaml). aprobado: false lo deja escrito donde se puede
+# verificar, no sólo en este comentario.
+
+version: v0.1.0
+aprobado: false
+aprueba: Gabriel
+
+# Banda alrededor de la meta que cuenta como "amarillo" en vez de "rojo". Con mayor_mejor,
+# un valor entre meta*(1-tolerancia) y meta cuenta como amarillo; con menor_mejor, al revés.
+tolerancia_amarilla_pct: 10
+
+kpis:
+  margen_ponderado_pct:
+    nombre: "Margen ponderado"
+    departamento: 02-finanzas-contabilidad-administracion
+    fuente: svc-profitability
+    unidad: pct
+    direccion: mayor_mejor
+    meta: 15.0
+
+  dias_cartera_dso:
+    nombre: "Días de cartera (DSO)"
+    departamento: 02-finanzas-contabilidad-administracion
+    fuente: svc-ar
+    unidad: dias
+    direccion: menor_mejor
+    meta: 30
+
+  saldo_vencido_pct:
+    nombre: "% de cartera vencida"
+    departamento: 02-finanzas-contabilidad-administracion
+    fuente: svc-ar
+    unidad: pct
+    direccion: menor_mejor
+    meta: 10.0
+
+  dias_de_caja:
+    nombre: "Días de caja"
+    departamento: 02-finanzas-contabilidad-administracion
+    fuente: svc-treasury
+    unidad: dias
+    direccion: mayor_mejor
+    meta: 90
+
+  tasa_rechazo_ingesta_pct:
+    nombre: "Tasa de rechazo de ingesta"
+    departamento: 05-tecnologia-datos-innovacion
+    fuente: svc-ingest
+    unidad: pct
+    direccion: menor_mejor
+    meta: 5.0
+
+  viajes_en_perdida_pct:
+    nombre: "% de viajes en pérdida"
+    departamento: 03-operaciones-logisticas
+    fuente: svc-profitability
+    unidad: pct
+    direccion: menor_mejor
+    meta: 5.0

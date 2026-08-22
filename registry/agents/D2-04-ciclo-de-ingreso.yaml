@@ -42,7 +42,6 @@ tools:
   - svc-trace
   - svc-runlog
   - svc-budget
-tools_planeadas:
   - svc-treasury        # fase 3: el cobro esperado alimenta la posición de caja
 
 inputs: [viaje_listo_para_facturar, expediente_de_viaje, pago_aplicado, saldo_vencido]

@@ -1,0 +1,51 @@
+id: svc-ap
+name: Cuentas por Pagar y Calendario de Pagos
+type: deterministic_python
+estado: built
+fase: 3
+owner_domain: [02-finanzas]
+modulo: services/ap
+
+# El espejo de svc-ar del lado de lo que se paga. El §9.1 pone la prioridad de pago en la
+# lista de rankings con consecuencia: la calcula este servicio con una rúbrica versionada,
+# no el criterio de quien tenga la chequera a la mano.
+consumidores: [svc-treasury, svc-alerts]
+# D2-05 Ciclo de Egreso lo consume desde la fase 4 y es quien ejecuta el pago (ACT-PAY); no
+# está en la lista porque no existe todavía (roadmap.yaml).
+
+inputs:
+  - cuentas_por_pagar
+  - pagos_realizados          # de svc-ingest: el banco ya se normaliza desde la Fase 0
+  - dias_credito_por_cuenta   # ver decisiones_pendientes: no hay catálogo de proveedores aún
+  - fecha_de_corte
+outputs:
+  - calendario_de_pagos
+  - saldo_por_pagar
+  - vencido_por_pagar
+  - prioridad_de_pago
+
+tests:
+  - test_calendario_ordena_por_vencimiento
+  - test_una_cuenta_vencida_entra_al_tramo_correcto
+  - test_un_pago_parcial_reduce_el_saldo_no_la_antiguedad
+  - test_prioridad_de_pago_sale_de_regla_no_de_criterio
+  - test_un_proveedor_critico_suma_puntos_extra
+  - test_un_pago_sin_referencia_no_se_reparte
+  - test_una_cuenta_liquidada_sale_del_calendario
+  - test_flujo_de_sintesis_ejecutiva
+
+controls: [CTL-AUDIT, CTL-LIMIT]
+limits:
+  - no_ejecuta_el_pago                        # eso es ACT-PAY de D2-05, fase 4, con doble factor
+  - no_reordena_prioridad_por_criterio_propio
+  - no_condona_ni_reprograma_vencimiento
+version: v1.0.0
+
+rubrica: registry/policies/rubrica-pagos.yaml   # §9.1: todo ranking con consecuencia
+
+decisiones_pendientes:
+  - "No existe todavía un catálogo de proveedores en svc-masterdata: los días de crédito se
+     reciben por cuenta, no se consultan de un catálogo. Cuando el catálogo exista, esto se
+     vuelve una consulta como la que hace svc-ar contra el cliente."
+  - "Política de priorización de pago (proveedor crítico, si se permite pago parcial) sigue
+     sin confirmar con Nay y Gabriel."

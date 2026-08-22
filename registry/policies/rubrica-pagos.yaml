@@ -1,0 +1,33 @@
+# Rúbrica de prioridad de pago — la consume svc-ap
+#
+# El §9.1 pone la prioridad de pago en la lista de rankings con consecuencia, igual que la
+# prioridad de cobranza de rubrica-cobranza.yaml: a qué proveedor se le paga primero es una
+# decisión con efecto sobre la relación comercial, y tiene que poder explicarse con los mismos
+# números para todos, no con el criterio de quien tenga la chequera a la mano.
+#
+# La versión viaja en cada salida. Si mañana se cambia un peso, los calendarios de ayer siguen
+# siendo reproducibles.
+
+version: v0.1.0
+calibrado: false
+calibrar_con: "los primeros tres meses de cuentas por pagar reales"
+aprueba: Gabriel
+
+# Puntos por peso vencido, por día de atraso y por proveedor marcado crítico. La suma ordena
+# la prioridad; el desempate es por saldo.
+pesos:
+  saldo_por_pagar_mxn: 1.0        # 1 punto por cada peso vencido
+  por_dia_vencido: 150.0          # 1 día de atraso pesa como $150 de saldo
+  proveedor_critico: 8000.0       # un proveedor que puede detener operación va antes
+
+# Ninguno todavía: la lista de proveedores críticos (combustible, refacciones, seguro) la
+# confirma Nay con Elias. Vacía por diseño hasta entonces — no se inventa una lista a mano.
+proveedores_criticos: []
+
+# Cortes del aging de lo YA vencido, en días. Lo que aún no vence entra al calendario por
+# semana, no a este aging — misma forma que rubrica-cobranza.yaml.
+tramos:
+  - {nombre: "1-15",   desde: 1,   hasta: 15}
+  - {nombre: "16-30",  desde: 16,  hasta: 30}
+  - {nombre: "31-60",  desde: 31,  hasta: 60}
+  - {nombre: "60+",    desde: 61,  hasta: null}

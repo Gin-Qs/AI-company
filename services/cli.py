@@ -5,6 +5,7 @@
     python -m services.cli facturar --viaje T-1001 --cliente CL-01 --flete 26500 \
         --documentos orden_de_servicio,carta_porte,pod           # Fase 2
     python -m services.cli cartera --datos data/ejemplo --corte 2026-06-30
+    python -m services.cli brief --datos data/ejemplo --corte 2026-06-30            # Fase 3
 
 Sin agentes y sin ACT-*: aqui solo corre codigo. `fase0` es el default si no se nombra
 subcomando, para no romper la invocacion documentada de la Fase 0.
@@ -19,14 +20,19 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+from services.alerts import evaluar as evaluar_alertas
+from services.ap.cuentas_por_pagar import analizar as analizar_pagos, conciliar as conciliar_pagos
 from services.ar import cartera_desde_operacion
 from services.common.errors import ErrorDeServicio
+from services.common.money import pct
 from services.doc_checklist import Documento, revisar as revisar_expediente
 from services.invoicing import EntradaFactura, armar_borrador, conceptos_de_viaje
+from services.kpi import construir_tablero
 from services.masterdata import cargar_catalogo, fecha as parse_fecha
 from services.pipeline import ReporteFase0, ejecutar_fase0
 from services.pricing import Autorizacion, EntradaCotizacion, cotizar, dictaminar
 from services.trace import Libro
+from services.treasury.desde_operacion import construir_desde_datos as construir_tesoreria
 
 ANCHO = 78
 
@@ -215,6 +221,50 @@ def render_cartera(resultado) -> str:
     return "\n".join(partes)
 
 
+def render_brief(tesoreria, pagos, tablero, seleccion) -> str:
+    partes = [_linea("TESORERIA (svc-treasury)")]
+    partes.append(
+        f"  corte {tesoreria.corte}   saldo actual $ {tesoreria.saldo_actual_mxn}   "
+        f"gasto diario prom. $ {tesoreria.gasto_diario_promedio_mxn}"
+    )
+    partes.append(
+        f"  dias de caja: {tesoreria.dias_de_caja if tesoreria.dias_de_caja is not None else 'indeterminado'}"
+    )
+    for supuesto in tesoreria.assumptions:
+        partes.append(f"    supuesto: {supuesto}")
+
+    partes.append(_linea("PAGOS (svc-ap)"))
+    partes.append(
+        f"  por pagar $ {pagos.saldo_total_mxn}   vencido $ {pagos.saldo_vencido_mxn}"
+        + ("" if pagos.rubrica_calibrada else "   (rubrica sin calibrar)")
+    )
+
+    partes.append(_linea("TABLERO (svc-kpi)"))
+    for indicador in tablero.indicadores:
+        partes.append(
+            f"  {indicador.kpi_id:<24} {indicador.valor:>10} {indicador.unidad:<5} "
+            f"[{indicador.estado:<8}]  meta {indicador.meta if indicador.meta is not None else 'sin meta'}"
+        )
+
+    partes.append(_linea("ALERTAS (svc-alerts)"))
+    if not seleccion.alertas:
+        partes.append("  sin alertas")
+    for alerta in seleccion.alertas:
+        marca = "BRIEF" if alerta.entra_al_brief else "     "
+        partes.append(f"  [{marca}] {alerta.severidad:<6} {alerta.tipo:<10} {alerta.mensaje}")
+    if not seleccion.reglas_calibradas:
+        partes.append("  (reglas de alertas sin calibrar)")
+
+    partes.append(_linea("BRIEF (lo que D1-03 narraria)"))
+    seleccionadas = seleccion.seleccion_para_el_brief
+    if not seleccionadas:
+        partes.append("  Sin alertas que reporten hoy.")
+    for alerta in seleccionadas:
+        partes.append(f"  - {alerta.mensaje}")
+    partes.append(_linea())
+    return "\n".join(partes)
+
+
 def _comando_facturar(args) -> int:
     """Expediente y borrador. Nunca timbra: eso lo autoriza una persona en la bandeja."""
     try:
@@ -276,6 +326,51 @@ def _comando_cartera(args) -> int:
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(json.dumps(resultado.as_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"Reporte JSON escrito en {destino}")
+    return 0
+
+
+def _comando_brief(args) -> int:
+    """Tesoreria, pagos, tablero y alertas: exactamente lo que D1-03 narraria."""
+    try:
+        corte = parse_fecha(args.corte) if args.corte else date.today()
+        reporte = ejecutar_fase0(args.datos)
+        cartera_op = cartera_desde_operacion(args.datos, corte=corte)
+        cartera = cartera_op.cartera
+
+        # svc-ap: sin cuentas por pagar reales en data/ejemplo (docs/fase-3.md lo declara
+        # pendiente). Un calendario vacio sigue siendo una salida valida, no un error.
+        pagos = analizar_pagos(conciliar_pagos([], []), corte=corte)
+
+        tesoreria = construir_tesoreria(
+            args.datos,
+            saldo_inicial_mxn=args.saldo_inicial,
+            corte=corte,
+            cartera=cartera,
+            pagos=pagos,
+        )
+
+        valores = {
+            "margen_ponderado_pct": reporte.distribucion.ponderado_pct,
+            "dias_de_caja": tesoreria.dias_de_caja if tesoreria.dias_de_caja is not None else Decimal("0"),
+        }
+        if cartera.dias_cartera is not None:
+            valores["dias_cartera_dso"] = cartera.dias_cartera
+        if cartera.saldo_total_mxn > 0:
+            valores["saldo_vencido_pct"] = pct(cartera.saldo_vencido_mxn, cartera.saldo_total_mxn)
+        tablero = construir_tablero(valores, periodo=corte.strftime("%Y-%m"))
+
+        seleccion = evaluar_alertas(
+            tesoreria=tesoreria,
+            cartera=cartera,
+            pagos=pagos,
+            desviaciones_margen=reporte.contraste.desviaciones if reporte.contraste else None,
+            corte=corte,
+        )
+    except ErrorDeServicio as exc:
+        print(f"ERROR {exc}", file=sys.stderr)
+        return 2
+
+    print(render_brief(tesoreria, pagos, tablero, seleccion))
     return 0
 
 
@@ -373,6 +468,14 @@ def main(argv: list[str] | None = None) -> int:
     car.add_argument("--corte", help="AAAA-MM-DD; por omision, hoy")
     car.add_argument("--json", dest="salida_json", help="escribe la cartera completa en este archivo")
 
+    brief = sub.add_parser("brief", help="tesoreria, pagos, tablero y alertas (Fase 3)")
+    brief.add_argument("--datos", default="data/ejemplo")
+    brief.add_argument("--corte", help="AAAA-MM-DD; por omision, hoy")
+    brief.add_argument(
+        "--saldo-inicial", dest="saldo_inicial", default="0",
+        help="saldo de caja declarado; sin integracion bancaria que lo confirme (ver svc-treasury)",
+    )
+
     # Compatibilidad: `--datos ...` sin subcomando sigue siendo la Fase 0.
     argumentos = list(sys.argv[1:] if argv is None else argv)
     if not argumentos or argumentos[0].startswith("-"):
@@ -383,6 +486,7 @@ def main(argv: list[str] | None = None) -> int:
         "cotizar": _comando_cotizar,
         "facturar": _comando_facturar,
         "cartera": _comando_cartera,
+        "brief": _comando_brief,
     }
     return comandos.get(args.comando, _comando_fase0)(args)
 

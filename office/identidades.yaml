@@ -33,6 +33,9 @@ zonas:
   operaciones:
     nombre: "Cierre de Viaje"
     descripcion: "D3-05 y el archivero de expedientes. Sin papel completo no se factura."
+  direccion:
+    nombre: "Síntesis Ejecutiva"
+    descripcion: "D1-03 y la pantalla del brief. El tablero está armado; la silla, vacía."
 
 agentes:
   C-01:
@@ -182,3 +185,14 @@ agentes:
     escritorio: {x: 13, y: 6}
     zona: operaciones
     sprite: {piel: "#a86b45", pelo: "#20160f", ropa: "#6b8f3f", acento: "#d9f2a8", estilo: largo}
+
+  # Fase 3. El quinto agente: cierra el corte de MVP (§15). Igual que los cuatro de arriba,
+  # existe entero y nadie puede convocarla todavía.
+  D1-03:
+    nombre: Isabel
+    puesto: "Síntesis Ejecutiva"
+    lema: "No elijo qué ves. Elijo cómo contártelo sin que se me caiga un número."
+    voz: "Narra exactamente lo que svc-alerts seleccionó y lo que svc-kpi empaquetó. No añade tema."
+    escritorio: {x: 15, y: 3}
+    zona: direccion
+    sprite: {piel: "#d9a066", pelo: "#2b2118", ropa: "#5b3a8e", acento: "#f4c95d", estilo: corto}

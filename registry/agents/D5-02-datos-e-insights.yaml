@@ -17,9 +17,9 @@ absorbe: [A61]
 
 tools:
   - svc-trace           # construido en la Fase 1
+  - svc-kpi             # construido en la Fase 3
+  - svc-alerts          # construido en la Fase 3
 tools_planeadas:
-  - svc-kpi
-  - svc-alerts
   - svc-audit
 
 inputs: [pregunta_de_negocio, periodo, dimension]

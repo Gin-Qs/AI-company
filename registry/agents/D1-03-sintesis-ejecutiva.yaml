@@ -1,0 +1,57 @@
+id: D1-03
+name: Síntesis Ejecutiva
+department: 01-direccion-y-gobierno
+teams:
+  - T01-03
+mission: >
+  Redactar el brief diario y la síntesis de alertas de liquidez, margen, cartera y pagos sobre
+  datos ya verificados. Ningún número lo calcula: los toma de svc-kpi y svc-alerts. No decide
+  qué entra al brief —eso lo selecciona svc-alerts, §9.2— y no fija estrategia, que es de D1-01.
+
+# `listo`: sus dos servicios existen y están en verde; lo que falta no es código suyo.
+estado: listo
+fase: 3
+model_tier: Bajo
+absorbe: [A3]   # narra A4 y A5: los indicadores y las alertas, no los calcula (§15)
+
+condiciones_encendido:
+  - condicion: "svc-kpi y svc-alerts construidos y en verde"
+    responsable: D5-01
+    cumplida: true
+  - condicion: "Umbral de días de caja mínimo calibrado en registry/policies/alertas.yaml (hoy `calibrado: false`)"
+    responsable: Nay
+    decide: Gabriel
+    cumplida: false
+  - condicion: "Bandeja única de HITL del ERP en producción con los SLA de §7.3"
+    responsable: D5-01
+    cumplida: false
+
+invocable_por: [Gabriel, Nay, Ana]
+
+tools:
+  - svc-kpi
+  - svc-alerts
+  - svc-validation
+  - svc-trace
+  - svc-runlog
+  - svc-budget
+
+inputs: [periodo, tablero_kpi, alertas_seleccionadas]
+outputs: [brief_ejecutivo, sintesis_de_alertas]
+
+# Cero ACT-*: el brief es lectura interna, no comunicación externa. Si algún día saliera hacia
+# afuera, sería ACT-EMAIL-S con HITL o plantilla fija de svc-notify, como cualquier otro aviso.
+actions: []
+controls:
+  - CTL-AUDIT
+  - CTL-POLICY
+
+limits:
+  - no_genera_cifras_propias
+  - no_selecciona_contenido_del_brief    # la selección es de svc-alerts, no del agente
+  - no_omite_ni_anade_temas_del_brief
+  - no_decide_estrategia                 # eso es D1-01, que no existe hasta la fase 7
+
+prompt: agents/prompts/D1-03.md
+memoria: agents/memoria/D1-03.md
+prompt_version: v1.0.0
