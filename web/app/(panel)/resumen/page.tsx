@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-import { consumoDelPeriodo, hitlAbiertos, ultimaValidacion, umbralesPorCaso } from "@/lib/db/consultas";
+import {
+  consumoDelPeriodo,
+  festivosDeclarados,
+  hitlAbiertos,
+  ultimaValidacion,
+  umbralesPorCaso,
+} from "@/lib/db/consultas";
 import { bandejaDe, restanteLegible } from "@/lib/hitl";
 import { cargarAgentes, panorama } from "@/lib/registro";
 import { cargarCalendario } from "@/lib/registro/politicas";
@@ -21,15 +27,18 @@ export default async function Resumen() {
   const periodo = periodoDeHoy();
 
   const s = await sesion();
-  const [espera, umbrales, salud, consumo] = await Promise.all([
+  const [espera, umbrales, salud, consumo, festivos] = await Promise.all([
     hitlAbiertos(),
     umbralesPorCaso(),
     ultimaValidacion("main"),
     consumoDelPeriodo(periodo),
+    festivosDeclarados(),
   ]);
 
+  // Sin los festivos no se calcula el SLA: contarian los feriados como dias habiles y la
+  // columna «vence» diria menos tiempo del que hay.
   const bandeja =
-    espera.ok && s.estado === "vinculada"
+    espera.ok && festivos.ok && s.estado === "vinculada"
       ? bandejaDe({
           casos: espera.datos,
           persona: s.persona,
@@ -37,6 +46,7 @@ export default async function Resumen() {
           umbrales: umbrales.ok
             ? Object.fromEntries(umbrales.datos.map((u) => [u.trace_id, u.umbral]))
             : {},
+          festivos: festivos.datos.map((f) => f.fecha),
         })
       : [];
 
@@ -76,13 +86,15 @@ export default async function Resumen() {
         </div>
       </section>
 
-      {calendario.festivos.size === 0 && (
+      {/* Cuenta los del YAML y los declarados en la base: desde que existe la vista de
+          calendario, los feriados son operacion y ya no se editan por PR. */}
+      {festivos.ok && calendario.festivos.size + festivos.datos.length === 0 && (
         <div className="aviso">
-          <strong>Calendario laboral sin calibrar.</strong> La lista de festivos esta vacia,
+          <strong>Calendario laboral sin calibrar.</strong> No hay ningun festivo declarado,
           asi que un HITL abierto la vispera de un feriado vencera ese mismo dia, cuando no
-          haya nadie para atenderlo. Se llena en{" "}
-          <code>registry/policies/calendario-laboral.yaml</code>. Jornada vigente:{" "}
-          {calendario.horasPorDia} h, {calendario.diasHabiles.size} dias habiles.
+          haya nadie para atenderlo. Se declaran en <a href="/calendario">Calendario</a>.
+          Jornada vigente: {calendario.horasPorDia} h, {calendario.diasHabiles.size} dias
+          habiles.
           <p className="nota" style={{ marginTop: 8 }}>
             La lista esta vacia <strong>a proposito</strong>: los dias del articulo 74 de la
             LFT son publicos, pero cuales descansa Fleeter de verdad es un dato de la empresa

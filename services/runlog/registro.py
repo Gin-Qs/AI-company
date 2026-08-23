@@ -30,7 +30,7 @@ from services.runlog.caso import (
     Transicion,
     ahora,
 )
-from services.runlog.sla import Vencimiento, resolver_vencimiento, vencimiento
+from services.runlog.sla import Vencimiento, calendario_vigente, resolver_vencimiento, vencimiento
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 ARCHIVO_POR_DEFECTO = RAIZ / "data" / "runlog" / "runlog.jsonl"
@@ -280,6 +280,10 @@ class RunLog:
     def vencidos(self, *, momento: datetime | None = None) -> list[Vencimiento]:
         """Los HITL que ya vencieron y que hacer con cada uno (§7.3). Ninguno se auto-aprueba."""
         referencia_tiempo = momento or ahora()
+        # El calendario se resuelve UNA vez, no por caso: `calendario_vigente()` consulta los
+        # festivos en Postgres, y hacerlo dentro del bucle serian N consultas para responder
+        # la misma pregunta.
+        cal = calendario_vigente()
         pendientes: list[Vencimiento] = []
         for caso in self.casos().values():
             if not caso.espera_humano:
@@ -293,6 +297,7 @@ class RunLog:
                 espera_desde=desde,
                 ahora=referencia_tiempo,
                 escalamientos=caso.escalamientos,
+                calendario=cal,
             )
             if resultado:
                 pendientes.append(resultado)

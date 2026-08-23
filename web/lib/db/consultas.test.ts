@@ -156,6 +156,36 @@ describe.skipIf(!hayCredenciales)("las consultas contra el esquema real", () => 
     }
   });
 
+  it("los festivos se leen como texto, sin arrastrar el huso", async () => {
+    // Un feriado es una fecha de calendario, no un instante. Si viniera como `Date`, el 16
+    // de septiembre podria volver como el 15 segun donde corra el proceso — y el SLA se
+    // correria un dia entero.
+    const r = await q.festivosDeclarados();
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    for (const f of r.datos) {
+      expect(typeof f.fecha).toBe("string");
+      expect(f.fecha).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(f.motivo.length).toBeGreaterThan(0);
+      expect(["manual", "ics", "yaml"]).toContain(f.origen);
+      expect(["completo", "administrativo"]).toContain(f.alcance);
+    }
+  });
+
+  it("la salud del registro que publico la CI se puede leer", async () => {
+    // Cierra §11 de punta a punta: el validador escribe, el portal lee. Si la vista
+    // reimplementara las reglas en vez de leerlas, esto no probaria nada.
+    const r = await q.ultimaValidacionDeCualquierRama();
+    expect(r.ok).toBe(true);
+    if (!r.ok || r.datos === null) return;
+    expect(Array.isArray(r.datos.reglas)).toBe(true);
+    // La suma de las cuatro categorias no tiene por que dar el total —una regla puede caer
+    // en ninguna— pero ninguna puede pasarse.
+    expect(r.datos.en_verde + r.datos.en_falla + r.datos.omitidas).toBeLessThanOrEqual(
+      r.datos.reglas.length,
+    );
+  });
+
   it("el historial de pausas trae quien la puso y quien la levanto", async () => {
     const r = await q.historialDePausas();
     expect(r.ok).toBe(true);

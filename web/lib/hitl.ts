@@ -15,7 +15,7 @@
 
 import type { Caso } from "./db/consultas";
 import { puedeAprobar, responsableDe, type Decision, type Persona, type Registro } from "./rbac";
-import { resolverVencimiento, vencimiento } from "./reglas/sla";
+import { calendario, conFestivos, resolverVencimiento, vencimiento } from "./reglas/sla";
 
 export interface HitlPendiente {
   caso: Caso;
@@ -46,11 +46,20 @@ export const bandejaDe = (args: {
   persona: Persona | null;
   registro: Registro;
   umbrales?: Record<string, string>;
+  /**
+   * Los festivos declarados en Postgres. Sin ellos el reloj cuenta un feriado como dia
+   * habil y el SLA vence antes de tiempo — por eso quien llama tiene que traerlos, y tiene
+   * que tratar el fallo de lectura como un error, no como una lista vacia.
+   */
+  festivos?: Iterable<string>;
   ahora?: number;
   soloLosSuyos?: boolean;
 }): HitlPendiente[] => {
   const ahora = args.ahora ?? Date.now();
   const umbrales = args.umbrales ?? {};
+  // Una sola vez para toda la bandeja: armarlo por caso seria recorrer la lista de festivos
+  // tantas veces como casos haya, para obtener siempre lo mismo.
+  const cal = args.festivos ? conFestivos(calendario(), args.festivos) : calendario();
 
   const pendientes = args.casos.map((caso): HitlPendiente => {
     const agenteId = caso.responsable;
@@ -58,7 +67,7 @@ export const bandejaDe = (args: {
     // El reloj del SLA arranca cuando el caso entro a esperar, que es su ultima
     // actualizacion: es el mismo criterio que usa `RunLog.vencidos()` en Python.
     const espera = new Date(caso.actualizado_en).getTime();
-    const venceEnMs = vencimiento(espera, caso.criticidad);
+    const venceEnMs = vencimiento(espera, caso.criticidad, cal);
 
     return {
       caso,
@@ -73,6 +82,7 @@ export const bandejaDe = (args: {
         esperaDesde: espera,
         ahora,
         escalamientos: caso.escalamientos,
+        calendario: cal,
       }),
       decision: args.persona
         ? puedeAprobar({ persona: args.persona, agenteId, umbral, registro: args.registro })

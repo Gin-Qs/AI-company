@@ -408,3 +408,127 @@ export const crearEncargo = async (args: {
     throw error;
   }
 };
+
+// --- festivos (scripts/sql/0003) --------------------------------------------
+
+export class FestivoInvalido extends Error {}
+
+const ES_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Declara un dia festivo.
+ *
+ * `fecha` viaja como texto "AAAA-MM-DD" de punta a punta y nunca como `Date`. Un feriado es
+ * una fecha de calendario, no un instante: convertirlo a `Date` le pega el huso del proceso,
+ * y el 16 de septiembre guardado desde un navegador en UTC-6 puede volver como el 15.
+ *
+ * `on conflict (fecha) do update` a proposito: volver a declarar un dia que ya existe es
+ * corregirle el motivo o el alcance, no un error. Lo que NO se pisa es el origen manual — ver
+ * `importarFestivos`.
+ */
+export const declararFestivo = async (args: {
+  fecha: string;
+  motivo: string;
+  alcance: "completo" | "administrativo";
+  personaId: string;
+}): Promise<void> => {
+  const fecha = args.fecha.trim();
+  const motivo = args.motivo.trim();
+  if (!ES_FECHA.test(fecha)) {
+    throw new FestivoInvalido(`«${fecha}» no es una fecha AAAA-MM-DD.`);
+  }
+  if (!motivo) {
+    throw new FestivoInvalido(
+      "Escribe que se celebra. Un feriado sin motivo no se puede revisar despues: dentro de " +
+        "un ano nadie sabra si sigue vigente.",
+    );
+  }
+
+  await enTransaccion(async (ejecutar) => {
+    await ejecutar(
+      `insert into festivos (fecha, motivo, origen, alcance, declarado_por)
+       values ($1::date, $2, 'manual', $3, $4)
+       on conflict (fecha) do update
+         set motivo = excluded.motivo,
+             alcance = excluded.alcance,
+             origen = 'manual',
+             declarado_por = excluded.declarado_por`,
+      [fecha, motivo, args.alcance, args.personaId],
+    );
+  });
+};
+
+export const borrarFestivo = async (fecha: string): Promise<boolean> => {
+  if (!ES_FECHA.test(fecha.trim())) {
+    throw new FestivoInvalido(`«${fecha}» no es una fecha AAAA-MM-DD.`);
+  }
+  return enTransaccion(async (ejecutar) => {
+    const r = await ejecutar(`delete from festivos where fecha = $1::date returning fecha`, [
+      fecha.trim(),
+    ]);
+    return r.rows.length > 0;
+  });
+};
+
+export interface ResultadoImportacion {
+  agregados: number;
+  actualizados: number;
+  respetados: string[];
+}
+
+/**
+ * Importa una tanda de festivos de un `.ics`.
+ *
+ * LA REGLA QUE IMPORTA: **una importacion no pisa lo que alguien escribio a mano.** Si el 16
+ * de septiembre ya esta declarado como `manual`, el archivo no lo cambia — se cuenta como
+ * respetado y se dice en pantalla. Al reves seria que reimportar un calendario deshiciera en
+ * silencio las correcciones de la persona que sabe cuales descansa Fleeter de verdad, que es
+ * justamente el dato que el archivo no tiene.
+ *
+ * Todo va en UNA transaccion: media importacion es peor que ninguna, porque deja un
+ * calendario que nadie sabe si esta completo.
+ */
+export const importarFestivos = async (args: {
+  eventos: Array<{ fecha: string; motivo: string; uid: string | null }>;
+  alcance: "completo" | "administrativo";
+  personaId: string;
+}): Promise<ResultadoImportacion> => {
+  for (const e of args.eventos) {
+    if (!ES_FECHA.test(e.fecha)) {
+      throw new FestivoInvalido(`El archivo trae una fecha ilegible: «${e.fecha}».`);
+    }
+  }
+
+  return enTransaccion(async (ejecutar) => {
+    let agregados = 0;
+    let actualizados = 0;
+    const respetados: string[] = [];
+
+    for (const e of args.eventos) {
+      const previo = await ejecutar(`select origen, motivo from festivos where fecha = $1::date`, [
+        e.fecha,
+      ]);
+      const existente = previo.rows[0] as { origen: string; motivo: string } | undefined;
+
+      if (existente?.origen === "manual") {
+        respetados.push(`${e.fecha} — ${existente.motivo} (declarado a mano)`);
+        continue;
+      }
+
+      await ejecutar(
+        `insert into festivos (fecha, motivo, origen, alcance, declarado_por, uid_externo)
+         values ($1::date, $2, 'ics', $3, $4, $5)
+         on conflict (fecha) do update
+           set motivo = excluded.motivo,
+               alcance = excluded.alcance,
+               declarado_por = excluded.declarado_por,
+               uid_externo = excluded.uid_externo`,
+        [e.fecha, e.motivo, args.alcance, args.personaId, e.uid],
+      );
+      if (existente) actualizados += 1;
+      else agregados += 1;
+    }
+
+    return { agregados, actualizados, respetados };
+  });
+};

@@ -18,7 +18,7 @@ Cambiar un horario o un plazo es editar un YAML y abrir un PR. No se toca este a
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -27,6 +27,7 @@ from typing import Literal
 import yaml
 
 from services.common.errors import ErrorDeValidacion
+from services.runlog import festivos as festivos_pg
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 CALENDARIO = RAIZ / "registry" / "policies" / "calendario-laboral.yaml"
@@ -118,6 +119,36 @@ def cargar_calendario(ruta: str | None = None) -> Calendario:
         calibrado=str(datos.get("calibrado") or "parcial"),
         version=str(datos.get("version") or "v1"),
     )
+
+
+def calendario_vigente(ruta: str | None = None) -> Calendario:
+    """El calendario que de verdad rige: el YAML mas los festivos declarados en Postgres.
+
+    ESTA es la funcion que usan los calculos de SLA, no `cargar_calendario`. La distincion
+    importa: `cargar_calendario` lee la POLITICA —huso, jornada, dias habiles— y esa vive en
+    git. Los festivos son un catalogo de la empresa que se captura desde el portal, y si el
+    calculo del SLA no los leyera de ahi tendriamos dos calendarios: se declararia un feriado
+    en la pantalla y el reloj seguiria contandolo como dia habil.
+
+    Sin base configurada devuelve el calendario del YAML tal cual, que es el modo de
+    desarrollo y el de las pruebas. Con base configurada que no responde **propaga el error**:
+    una lista de festivos vacia es un calendario que afirma que se trabaja todos los dias, y
+    calcular un SLA sobre eso lo acorta en silencio.
+
+    No se cachea a proposito. Un festivo que se declara hoy tiene que contar hoy, y el costo
+    de una consulta por calculo de SLA es despreciable al lado de vencer un HITL antes de
+    tiempo.
+    """
+    base = cargar_calendario(ruta)
+    if festivos_pg.dsn() is None:
+        return base
+
+    declarados = festivos_pg.fechas()
+    if not declarados:
+        return base
+    # Union, no reemplazo: lo que quede escrito en el YAML sigue contando. Que la fuente se
+    # haya movido no invalida lo que alguien ya habia declarado ahi.
+    return replace(base, festivos=base.festivos | declarados)
 
 
 @dataclass(frozen=True)
@@ -270,7 +301,10 @@ def sumar_dias_habiles(desde: datetime, dias: int, calendario: Calendario | None
 
 
 def vencimiento(desde: datetime, criticidad: str, calendario: Calendario | None = None) -> datetime:
-    cal = calendario or _CAL
+    # `calendario_vigente()` y no `_CAL`: `_CAL` se congelo al importar el modulo y solo trae
+    # los festivos del YAML. Un feriado declarado desde el portal tiene que contar sin
+    # reiniciar el proceso, o el SLA vence un dia antes de lo que corresponde.
+    cal = calendario or calendario_vigente()
     reglas = cargar_sla()
     if criticidad not in reglas:
         raise ErrorDeValidacion(f"criticidad desconocida: {criticidad!r}", campo="criticidad")
@@ -312,7 +346,7 @@ def resolver_vencimiento(
     Con la politica por defecto: alta escala y deja el caso bloqueado; media escala una vez
     y luego expira; baja expira.
     """
-    cal = calendario or _CAL
+    cal = calendario or calendario_vigente()
     reglas = cargar_sla()
     if criticidad not in reglas:
         raise ErrorDeValidacion(f"criticidad desconocida: {criticidad!r}", campo="criticidad")

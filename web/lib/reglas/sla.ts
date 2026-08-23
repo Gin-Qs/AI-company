@@ -209,3 +209,27 @@ export const resolverVencimiento = (args: {
     motivo,
   };
 };
+
+/**
+ * El calendario del YAML con los festivos declarados en Postgres anadidos.
+ *
+ * Existe porque los festivos dejaron de vivir en `calendario-laboral.yaml` (ver
+ * `scripts/sql/0003`): el huso, la jornada y los dias habiles siguen siendo politica en git,
+ * pero la lista de feriados es un catalogo de la empresa que se captura desde el portal.
+ *
+ * Se pasa por parametro y no se lee aqui a proposito: leerlos es asincrono —una consulta— y
+ * estas funciones son sincronas. Quien pinta la pagina los trae; quien los trae tambien se
+ * asegura de que **no poder leerlos** sea un error visible y no una lista vacia, porque una
+ * lista vacia es un calendario que afirma que se trabaja todos los dias y acorta el SLA sin
+ * decirlo.
+ */
+export const conFestivos = (
+  base: Calendario,
+  declarados: Iterable<string>,
+): Calendario => {
+  // Union, no reemplazo: lo que quede escrito en el YAML sigue contando. Que la fuente se
+  // haya movido no invalida lo que alguien ya habia declarado ahi.
+  const fechas = new Set(base.festivos);
+  for (const f of declarados) fechas.add(String(f).slice(0, 10));
+  return { ...base, festivos: fechas };
+};

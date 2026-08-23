@@ -21,28 +21,11 @@ con un mensaje claro es preferible a que trabaje durante una pausa que no pudo l
 
 from __future__ import annotations
 
-import os
+from services.common.postgres import MARCADORES, dsn  # noqa: F401 - se reexportan
 
 
 class PausaIlegible(RuntimeError):
     """Hay base de datos configurada y no se pudo preguntar si la oficina esta en pausa."""
-
-
-MARCADORES = ("CONTRASENA", "PON_AQUI")
-
-
-def dsn() -> str | None:
-    """La cadena de conexion, o `None` si no hay base configurada de verdad.
-
-    Un marcador de contrasena cuenta como "sin configurar": es lo que trae `.env.example`, y
-    tratarlo como una cadena valida haria que el CLI fallara con un error de autenticacion
-    en vez de decir que falta configurar la base.
-    """
-    for variable in ("DIRECT_URL", "DATABASE_URL"):
-        valor = (os.environ.get(variable) or "").strip()
-        if valor and not any(m in valor for m in MARCADORES):
-            return valor
-    return None
 
 
 SQL = """

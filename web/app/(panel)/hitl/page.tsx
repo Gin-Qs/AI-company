@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { hitlAbiertos, umbralesPorCaso, type Caso } from "@/lib/db/consultas";
+import { festivosDeclarados, hitlAbiertos, umbralesPorCaso, type Caso } from "@/lib/db/consultas";
 import { bandejaDe, restanteLegible } from "@/lib/hitl";
 import { sesion } from "@/lib/sesion";
 
@@ -28,7 +28,11 @@ export default async function Bandeja({
   const verTodos = todos === "1";
 
   const s = await sesion();
-  const [espera, umbrales] = await Promise.all([hitlAbiertos(), umbralesPorCaso()]);
+  const [espera, umbrales, festivos] = await Promise.all([
+    hitlAbiertos(),
+    umbralesPorCaso(),
+    festivosDeclarados(),
+  ]);
 
   return (
     <>
@@ -48,6 +52,15 @@ export default async function Bandeja({
           detalle={espera.detalle}
           queMostraria="los casos que esperan a una persona, con su SLA, el umbral que disparo el gate y quien puede aprobarlos"
         />
+      ) : !festivos.ok ? (
+        // La bandeja NO se pinta sin los festivos. Calcular el SLA sin ellos cuenta los
+        // feriados como dias habiles y vence los casos antes de tiempo — un error que se ve
+        // exactamente igual que un calculo correcto.
+        <SinDatos
+          motivo={festivos.motivo}
+          detalle={festivos.detalle}
+          queMostraria="la bandeja con su SLA. Sin la lista de festivos el reloj contaria los feriados como dias habiles y los casos vencerian antes de tiempo, asi que no se calcula"
+        />
       ) : s.estado !== "vinculada" ? (
         <VacioDeVerdad>
           Hay {espera.datos.length} caso(s) esperando. No se pueden mostrar sin saber quien
@@ -61,6 +74,7 @@ export default async function Bandeja({
           umbrales={
             umbrales.ok ? Object.fromEntries(umbrales.datos.map((u) => [u.trace_id, u.umbral])) : {}
           }
+          festivos={festivos.datos.map((f) => f.fecha)}
           sesion={s}
           verTodos={verTodos}
         />
@@ -72,11 +86,13 @@ export default async function Bandeja({
 function BandejaResuelta({
   casos,
   umbrales,
+  festivos,
   sesion: s,
   verTodos,
 }: {
   casos: Caso[];
   umbrales: Record<string, string>;
+  festivos: string[];
   sesion: Extract<Awaited<ReturnType<typeof sesion>>, { estado: "vinculada" }>;
   verTodos: boolean;
 }) {
@@ -85,6 +101,7 @@ function BandejaResuelta({
     persona: s.persona,
     registro: s.registro,
     umbrales,
+    festivos,
     soloLosSuyos: !verTodos,
   });
   const total = casos.length;

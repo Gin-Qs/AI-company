@@ -293,3 +293,34 @@ export const pausaActiva = async (): Promise<
     },
   };
 };
+
+// --- festivos (scripts/sql/0003) --------------------------------------------
+
+export interface Festivo {
+  fecha: string;
+  motivo: string;
+  origen: "manual" | "ics" | "yaml";
+  alcance: "completo" | "administrativo";
+  declarado_por_nombre: string | null;
+  uid_externo: string | null;
+}
+
+/**
+ * Los dias que no cuentan para el reloj del SLA.
+ *
+ * Los lee tambien `services/runlog/festivos.py`: una sola fuente para las dos
+ * implementaciones del calendario. Si cada una mirara un sitio distinto, se declararia un
+ * feriado desde el portal y el CLI seguiria contandolo como dia habil.
+ *
+ * `fecha` sale como texto "AAAA-MM-DD" y no como `Date`: comparar fechas de calendario con
+ * objetos `Date` arrastra el huso del proceso, y el 16 de septiembre en UTC-6 puede ser el 15
+ * o el 17 segun quien pregunte.
+ */
+export const festivosDeclarados = (): Promise<Lectura<Festivo[]>> =>
+  filas<Festivo>(
+    `select to_char(f.fecha, 'YYYY-MM-DD') as fecha, f.motivo, f.origen, f.alcance,
+            f.uid_externo, quien.nombre as declarado_por_nombre
+       from festivos f
+       left join personas quien on quien.id = f.declarado_por
+      order by f.fecha`,
+  );

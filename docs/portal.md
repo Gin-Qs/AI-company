@@ -693,7 +693,8 @@ observado"*. El portal va a pintar porcentajes contra un tope inventado. Debe mo
 `calibrado: false` en la pantalla, no esconderlo detrás de una barra de progreso que parece
 autoridad.
 
-**14.4 — Los festivos siguen sin cargar.** Ya no es un defecto del código: el mecanismo
+**14.4 — Los festivos siguen sin cargar.** *(Actualizado: ya hay dónde cargarlos — la vista
+de Calendario, §20. Lo que sigue faltando es el dato, y sigue siendo de Fleeter.)* Ya no es un defecto del código: el mecanismo
 existe, está probado (`test_un_festivo_no_cuenta_para_el_reloj`) y un día listado en
 `calendario-laboral.yaml → festivos.fechas` se salta igual que un sábado. Lo que falta es
 **el dato**, y la lista está vacía a propósito.
@@ -873,3 +874,56 @@ La **vista 8** ya no está en esta lista: se construyó. Envuelve las reglas de
 encargo ambiguo— y no de oídas: `scripts/vectores_convocatoria.py` llama al Python real agente
 por agente y `web/lib/convocar.test.ts` exige el mismo veredicto en los 37 casos. La CI
 comprueba que los vectores sigan al día, igual que con los del SLA.
+
+
+## 20. El calendario laboral: qué es política y qué es operación `[CONSTRUIDO]`
+
+Los festivos llevaban vacíos desde que existe el calendario, y no por descuido: la única forma
+de llenarlos era abrir un pull request contra `calendario-laboral.yaml`. **Una lista que sólo
+se puede llenar por PR es una lista que se queda vacía**, y ésta tenía consecuencia real — un
+HITL de criticidad alta abierto el 15 de septiembre por la tarde vencía el 16, que es feriado.
+
+Así que el archivo se parte, y la línea no es arbitraria:
+
+| Qué | Dónde | Por qué |
+|---|---|---|
+| Huso, jornada, días hábiles | `registry/policies/calendario-laboral.yaml` | **Mecanismo.** Cambia casi nunca, y un horario que se edita desde una pantalla es un horario sin auditoría |
+| Días festivos | Postgres, tabla `festivos` | **Catálogo de la empresa.** Cambia cada año, y nadie lo iba a mantener por PR |
+
+Lo que se gana al moverlos es, además, más auditoría de la que había: cada fila dice quién la
+declaró, cuándo y de dónde salió. `git blame` decía quién editó el archivo, no de dónde venía
+el dato.
+
+**Una sola fuente para las dos implementaciones.** `services/runlog/sla.py:calendario_vigente()`
+y `web/lib/reglas/sla.ts:conFestivos()` leen los mismos festivos. Si cada una mirara un sitio
+distinto tendríamos dos calendarios: se declararía un feriado desde el portal y el CLI seguiría
+contándolo como día hábil. Es el mismo error que la pausa tuvo hasta hoy (§4).
+
+**Si la base no responde, el SLA no se calcula.** Una lista de festivos vacía no es un error
+visible: es un calendario que afirma que se trabaja todos los días, y el plazo vence antes.
+`calendario_vigente()` propaga el fallo y la bandeja se niega a pintarse. Mismo criterio que la
+pausa: un control que ante la duda deja pasar no está comprobando nada.
+
+### 20.1 Importar, no sincronizar
+
+Se descartó conectar el portal a Outlook en vivo, y conviene que la razón quede escrita porque
+la petición original era ésa.
+
+Este calendario **decide cuándo vencen las aprobaciones**. Con sincronización viva, alguien
+moviendo un evento en su calendario cambiaría en silencio cuándo expira un HITL, y el día que
+el servicio no respondiera el SLA se quedaría sin saber qué día es hábil. Importar un `.ics`
+es una decisión que queda registrada con autor y fecha; sincronizar sería una dependencia en la
+ruta crítica de un control.
+
+El archivo se lee **en el navegador antes de mandarlo**, así que se ve exactamente qué días van
+a entrar y cuáles se ignoran antes de tocar la base. Se ignoran a propósito:
+
+- **Los eventos con hora.** Un feriado es un día entero; una junta de las 3 no debería volver
+  inhábil ese día y alargar todos los SLA de la semana.
+- **Las repeticiones (`RRULE`).** Evaluar mal una regla de repetición significa un feriado el
+  día equivocado durante años. Se declara lo que el archivo dice literalmente.
+
+Y una regla que importa más que las otras: **una importación no pisa lo que se declaró a
+mano.** El archivo no sabe cuáles descansa Fleeter de verdad; la persona que lo corrigió, sí.
+Reimportar un calendario y deshacer esas correcciones en silencio sería perder justo el dato
+que hacía falta.

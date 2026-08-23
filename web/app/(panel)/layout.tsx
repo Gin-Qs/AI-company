@@ -60,6 +60,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <Link href="/convocar">Convocar</Link>
           <Link href="/casos">Casos</Link>
           <Link href="/oficina">Oficina</Link>
+          <Link href="/calendario">Calendario</Link>
           <Link href="/registro">Salud del registro</Link>
         </nav>
         {s.estado === "vinculada" && (
