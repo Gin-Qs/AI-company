@@ -1,0 +1,184 @@
+{
+  "_generado_por": "scripts/vectores_sla.py",
+  "_fuente": "services/runlog/sla.py",
+  "_contrato": "El portal web reimplementa este calendario en TypeScript. Ambas implementaciones deben reproducir estos vectores exactamente. Ninguna accion al vencer puede ser 'aprobar' (regla dura, arquitectura v3 §7.3).",
+  "_politicas": {
+    "calendario": "registry/policies/calendario-laboral.yaml",
+    "sla": "registry/policies/authority-gate.yaml -> hitl.sla"
+  },
+  "calendario": {
+    "offset_horas": -6.0,
+    "apertura": "09:00",
+    "cierre": "18:00",
+    "dias_habiles": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "festivos": [],
+    "horas_por_dia": 9.0,
+    "calibrado": "parcial"
+  },
+  "sla": {
+    "alta": {
+      "horas_habiles": 4,
+      "dias_habiles": null,
+      "al_vencer": "escalar",
+      "luego": "bloquear"
+    },
+    "media": {
+      "horas_habiles": null,
+      "dias_habiles": 1,
+      "al_vencer": "escalar",
+      "luego": "expirar"
+    },
+    "baja": {
+      "horas_habiles": null,
+      "dias_habiles": 3,
+      "al_vencer": "expirar",
+      "luego": "expirar"
+    }
+  },
+  "vencimientos": [
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "alta",
+      "vence_en_utc": "2026-06-02T20:00:00+00:00",
+      "vence_en_local": "2026-06-02T14:00:00-06:00",
+      "dia_local": "Tuesday",
+      "por_que": "martes 10:00 local, dentro de jornada: 4h caben el mismo dia"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T21:00:00+00:00",
+      "criticidad": "alta",
+      "vence_en_utc": "2026-06-03T16:00:00+00:00",
+      "vence_en_local": "2026-06-03T10:00:00-06:00",
+      "dia_local": "Wednesday",
+      "por_que": "martes 15:00 local: las 4h cruzan el cierre y siguen el miercoles"
+    },
+    {
+      "espera_desde_utc": "2026-06-05T21:30:00+00:00",
+      "criticidad": "alta",
+      "vence_en_utc": "2026-06-08T16:30:00+00:00",
+      "vence_en_local": "2026-06-08T10:30:00-06:00",
+      "dia_local": "Monday",
+      "por_que": "viernes 15:30 local: cruza el fin de semana y cae el lunes"
+    },
+    {
+      "espera_desde_utc": "2026-06-06T18:00:00+00:00",
+      "criticidad": "alta",
+      "vence_en_utc": "2026-06-08T19:00:00+00:00",
+      "vence_en_local": "2026-06-08T13:00:00-06:00",
+      "dia_local": "Monday",
+      "por_que": "sabado: no hay jornada, el reloj arranca el lunes a las 9:00"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T12:00:00+00:00",
+      "criticidad": "alta",
+      "vence_en_utc": "2026-06-02T19:00:00+00:00",
+      "vence_en_local": "2026-06-02T13:00:00-06:00",
+      "dia_local": "Tuesday",
+      "por_que": "martes 06:00 local, antes de abrir: arranca a las 9:00"
+    },
+    {
+      "espera_desde_utc": "2026-06-03T02:00:00+00:00",
+      "criticidad": "alta",
+      "vence_en_utc": "2026-06-03T19:00:00+00:00",
+      "vence_en_local": "2026-06-03T13:00:00-06:00",
+      "dia_local": "Wednesday",
+      "por_que": "martes 20:00 local, ya cerrado: arranca el miercoles"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "media",
+      "vence_en_utc": "2026-06-03T16:00:00+00:00",
+      "vence_en_local": "2026-06-03T10:00:00-06:00",
+      "dia_local": "Wednesday",
+      "por_que": "1 dia habil = 9h: martes 10:00 vence miercoles 10:00"
+    },
+    {
+      "espera_desde_utc": "2026-06-05T16:00:00+00:00",
+      "criticidad": "media",
+      "vence_en_utc": "2026-06-08T16:00:00+00:00",
+      "vence_en_local": "2026-06-08T10:00:00-06:00",
+      "dia_local": "Monday",
+      "por_que": "viernes 10:00 local: 1 dia habil cae el lunes"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "baja",
+      "vence_en_utc": "2026-06-05T16:00:00+00:00",
+      "vence_en_local": "2026-06-05T10:00:00-06:00",
+      "dia_local": "Friday",
+      "por_que": "3 dias habiles = 27h desde martes 10:00"
+    },
+    {
+      "espera_desde_utc": "2026-06-04T20:00:00+00:00",
+      "criticidad": "baja",
+      "vence_en_utc": "2026-06-09T20:00:00+00:00",
+      "vence_en_local": "2026-06-09T14:00:00-06:00",
+      "dia_local": "Tuesday",
+      "por_que": "jueves 14:00 local: 3 dias habiles cruzan el fin de semana"
+    }
+  ],
+  "decisiones_al_vencer": [
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "alta",
+      "escalamientos_previos": 0,
+      "se_pregunta_en_utc": "2026-06-02T17:00:00+00:00",
+      "accion": null,
+      "por_que": "todavia no vence: no hay accion"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "alta",
+      "escalamientos_previos": 0,
+      "se_pregunta_en_utc": "2026-06-03T16:00:00+00:00",
+      "accion": "escalar",
+      "por_que": "vencio sin escalar: escala"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "alta",
+      "escalamientos_previos": 1,
+      "se_pregunta_en_utc": "2026-06-03T16:00:00+00:00",
+      "accion": "bloquear",
+      "por_que": "vencio ya escalado: bloquea, nunca aprueba"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "media",
+      "escalamientos_previos": 0,
+      "se_pregunta_en_utc": "2026-06-04T16:00:00+00:00",
+      "accion": "escalar",
+      "por_que": "vencio sin escalar: escala"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "media",
+      "escalamientos_previos": 1,
+      "se_pregunta_en_utc": "2026-06-04T16:00:00+00:00",
+      "accion": "expirar",
+      "por_que": "vencio ya escalado: expira"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "baja",
+      "escalamientos_previos": 0,
+      "se_pregunta_en_utc": "2026-06-09T16:00:00+00:00",
+      "accion": "expirar",
+      "por_que": "baja expira al primer vencimiento"
+    },
+    {
+      "espera_desde_utc": "2026-06-02T16:00:00+00:00",
+      "criticidad": "baja",
+      "escalamientos_previos": 2,
+      "se_pregunta_en_utc": "2026-06-09T16:00:00+00:00",
+      "accion": "expirar",
+      "por_que": "baja expira tambien con escalamientos"
+    }
+  ]
+}

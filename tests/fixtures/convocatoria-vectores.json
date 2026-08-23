@@ -1,0 +1,260 @@
+{
+  "generado_por": "scripts/vectores_convocatoria.py",
+  "que_es": "El veredicto de agents/runtime.py:convocar() para cada agente del registro. El puerto de TypeScript (web/lib/convocar.ts) tiene que dar el mismo.",
+  "borrador_completo": {
+    "titulo": "Encargo de prueba para los vectores",
+    "descripcion": "Modulo: vectores. Problema: el puerto puede divergir. Restriccion: ninguna.",
+    "entregable_esperado": "Un JSON con el veredicto de cada agente."
+  },
+  "vectores": [
+    {
+      "agente": "C-01",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-01",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-02",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-02",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-03",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-03",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-04",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-04",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-05",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-05",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-06",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-06",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-07",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-07",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-08",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-08",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "C-09",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-09",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "permiso_denegado"
+    },
+    {
+      "agente": "D1-03",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D1-03",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D2-03",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D2-03",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D2-04",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D2-04",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D3-05",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D3-05",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D4-03",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D4-03",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_sin_encender"
+    },
+    {
+      "agente": "D5-01",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "D5-01",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "D5-02",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_no_disponible"
+    },
+    {
+      "agente": "D5-02",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": false,
+      "motivo": "agente_no_disponible"
+    },
+    {
+      "agente": "D5-03",
+      "convocado_por": "Gabriel",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "D5-03",
+      "convocado_por": "Nadie",
+      "encargo_completo": true,
+      "puede": true
+    },
+    {
+      "agente": "C-01",
+      "convocado_por": "Gabriel",
+      "encargo_completo": false,
+      "campo_vacio": "titulo",
+      "puede": false,
+      "motivo": "encargo_ambiguo"
+    },
+    {
+      "agente": "C-01",
+      "convocado_por": "Gabriel",
+      "encargo_completo": false,
+      "campo_vacio": "descripcion",
+      "puede": false,
+      "motivo": "encargo_ambiguo"
+    },
+    {
+      "agente": "C-01",
+      "convocado_por": "Gabriel",
+      "encargo_completo": false,
+      "campo_vacio": "entregable_esperado",
+      "puede": false,
+      "motivo": "encargo_ambiguo"
+    }
+  ]
+}

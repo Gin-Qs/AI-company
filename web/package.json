@@ -1,0 +1,31 @@
+{
+  "name": "ai-company-portal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Portal de mando: la bandeja unica de HITL. Ver docs/portal.md",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "yaml": "^2.9.0"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.8.0",
+    "next": "^16.3.2",
+    "pg": "^8.23.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  }
+}

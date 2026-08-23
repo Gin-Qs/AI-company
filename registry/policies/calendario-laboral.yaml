@@ -1,0 +1,60 @@
+# Calendario laboral — cuando corre el reloj de un SLA
+#
+# Fuente normativa: docs/arquitectura-v3.md §7.3
+#
+# POR QUE ESTE ARCHIVO EXISTE. Hasta hoy la jornada vivia en duro dentro de
+# services/runlog/sla.py: 9 a 18, lunes a viernes, huso -6. Cambiar el horario de la
+# oficina obligaba a editar codigo y a que alguien se acordara de que el portal tiene
+# su propia copia en TypeScript. Un horario de oficina no es una decision de ingenieria:
+# es una decision de la empresa, y se cambia por PR sobre este archivo.
+#
+# QUIEN LO LEE. Las dos implementaciones del calendario, y ninguna otra copia:
+#   services/runlog/sla.py      (Python, la fuente de verdad del comportamiento)
+#   web/lib/reglas/calendario.ts (TypeScript, porque Vercel no ejecuta Python)
+# Que las dos no se separen lo verifica tests/fixtures/sla-vectores.json en cada push.
+#
+# COMO SE CAMBIA. Se edita aqui, se corre `python scripts/vectores_sla.py` para
+# regenerar los vectores, y se sube todo en el mismo commit. La CI reprueba el PR si
+# los vectores quedaron desfasados: no se puede cambiar el horario y olvidar el portal.
+
+version: v1.0.0
+
+# El huso y la jornada son reales y estan confirmados. Los festivos no.
+calibrado: parcial
+
+huso:
+  # Offset fijo a proposito: Mexico elimino el horario de verano en octubre de 2022,
+  # asi que -6 vale todo el año y no hace falta una base de datos de husos.
+  #
+  # Que el calendario corra en hora local no es un detalle: los timestamps del registro
+  # son UTC, y aplicarles un horario de 9 a 18 sin convertir pondria la jornada de las
+  # 3 de la mañana al mediodia. Un SLA mal encajado en el dia es peor que no tener SLA,
+  # porque parece que funciona.
+  offset_horas: -6
+  nombre: CST-MX
+  calibrado: true
+
+jornada:
+  apertura: "09:00"
+  cierre: "18:00"
+  # 0 = lunes ... 6 = domingo, igual que datetime.weekday() de Python. El puerto de
+  # TypeScript convierte desde getUTCDay() (0 = domingo) en un solo lugar.
+  dias_habiles: [0, 1, 2, 3, 4]
+  calibrado: true
+
+festivos:
+  # SIN CALIBRAR, y con consecuencia real: hoy un HITL de criticidad alta abierto el 15
+  # de septiembre por la tarde vence el 16, que es feriado, y nadie va a estar para
+  # atenderlo. El mecanismo ya existe y esta probado; lo que falta es la lista.
+  #
+  # No se rellena a ojo. Los dias del articulo 74 de la Ley Federal del Trabajo son
+  # publicos, pero cuales descansa Fleeter de verdad —y si operacion para o solo
+  # administracion— es un dato de la empresa que nadie ha confirmado. Poner una lista
+  # inventada aqui seria peor que dejarla vacia: el sistema se veria calibrado.
+  #
+  # Formato: AAAA-MM-DD. Un dia listado aqui no cuenta para el reloj del SLA, exactamente
+  # igual que un sabado.
+  calibrado: false
+  responsable: Nay
+  decide: Gabriel
+  fechas: []

@@ -9,6 +9,7 @@ import pytest
 from agents.runtime import convocar
 from office import bitacora, build
 from office import encargos as encargos_mod
+from agents.perfiles import cargar_perfiles
 from office.estado import construir
 
 
@@ -98,9 +99,15 @@ def test_estado_resume_el_avance(oficina_temporal):
     assert resumen["hechos"] == 1
     assert resumen["abiertos"] == 1
     assert resumen["avance_pct"] == 50
-    assert resumen["disponibles"] == 11        # los 9 consultores + D5-01 + D5-03
-    assert resumen["listos"] == 5              # D4-03, D2-03, D2-04, D3-05 y D1-03: sin encender
-    assert resumen["agentes"] == 17            # con la silla vacía de D5-02
+    # Estas cifras se derivan del registro y NO se escriben a mano. Fijarlas en duro
+    # convertiria "dar de alta un agente" en "romper la suite", que es justo lo contrario
+    # de lo que este proyecto quiere ser: el organigrama tiene que poder crecer sin que
+    # una prueba pida permiso.
+    perfiles = [q for q in cargar_perfiles().values() if q.identidad]
+    assert resumen["agentes"] == len(perfiles)
+    assert resumen["disponibles"] == sum(1 for q in perfiles if q.disponible)
+    assert resumen["listos"] == sum(1 for q in perfiles if q.listo)
+    assert resumen["disponibles"] >= 1, "sin un solo agente disponible la oficina no opera"
     assert segundo.estado == "pendiente"
 
 
@@ -123,7 +130,11 @@ def test_build_incrusta_un_estado_json_valido(oficina_temporal, tmp_path):
 def test_el_plano_dibuja_a_todos_los_que_tienen_identidad(oficina_temporal):
     estado = construir()
 
-    assert len(estado["agentes"]) == 17
+    # El plano dibuja exactamente a quien tiene identidad: ni uno mas, ni uno menos.
+    # La relacion es la invariante; el numero es una consecuencia.
+    con_identidad = {aid for aid, q in cargar_perfiles().items() if q.identidad}
+    assert {a["id"] for a in estado["agentes"]} == con_identidad
+
     for agente in estado["agentes"]:
         assert agente["escritorio"]["x"] is not None
         assert agente["sprite"], f"{agente['id']} sin sprite"

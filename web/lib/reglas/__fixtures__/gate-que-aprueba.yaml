@@ -1,0 +1,10 @@
+# Politica invalida A PROPOSITO. Solo la usa lib/reglas/sla.test.ts.
+#
+# Existe para comprobar que la regla dura de §7.3 se impone donde se ESCRIBE la politica
+# y no donde se aplica: cargar esto tiene que reventar, no producir un HITL que se
+# aprueba solo cuando vence.
+hitl:
+  sla:
+    alta:  { horas_habiles: 4, al_vencer: aprobar, luego: bloquear }
+    media: { dias_habiles: 1, al_vencer: escalar, luego: expirar }
+    baja:  { dias_habiles: 3, al_vencer: expirar, luego: expirar }

@@ -128,11 +128,59 @@ hitl:
   # el primer agente no se enciende sin bandeja, porque su primer HITL no tendría dónde llegar.
   canal_unico: panel_erp
   notificacion: whatsapp        # sólo avisa y enlaza; la aprobación ocurre en la bandeja
-  ruteo: owner_humano_del_equipo   # registry/teams/*.yaml; los co_owners ven pero no son responsables
+  # RUTEO — a quien le llega un HITL y quien puede resolverlo.
+  #
+  # Hasta v3.0.1 esto era un solo valor, `owner_humano_del_equipo`, y contradecia a la
+  # tabla de `umbrales` de este mismo archivo: Ana aparece ahi como quien aprueba un
+  # descuento de hasta 5% y un plazo de hasta 45 dias —los dos, dominio de D4-03— pero no
+  # es owner_humano de ningun equipo, asi que ningun HITL le llegaba nunca. Las dos cosas
+  # no podian ser verdad a la vez.
+  #
+  # Se resolvio separando dos preguntas que no son la misma:
+  #
+  #   ¿A quien le llega y quien RESPONDE por el?   -> responsable
+  #   ¿Quien mas puede APROBARLO?                  -> aprueban_ademas
+  #
+  # La responsabilidad sigue sin diluirse: es de una sola persona. Lo que se reconoce es
+  # que la autoridad ya declarada en `umbrales` sirve para algo.
+  ruteo:
+    # A quien se enruta y quien responde por el resultado. Un solo nombre, siempre.
+    responsable: owner_humano_del_equipo   # registry/teams/*.yaml -> owner_humano
+
+    # Quien mas puede aprobar. Valores admitidos:
+    #
+    #   nadie                    solo el responsable. El mas estricto.
+    #   co_owners                cualquier co_owner del equipo, sin mirar el umbral.
+    #   co_owners_con_autoridad  solo los co_owners a quienes la tabla `umbrales` de este
+    #                            archivo faculta para el umbral que disparo el HITL.
+    #
+    # VIGENTE: co_owners_con_autoridad. Con el, Ana puede aprobar un descuento de 3% de
+    # D4-03 —porque `descuento_tarifa.humano_operativo.quien` la nombra— y NO puede aprobar
+    # uno de 8%, que es de Direccion. Gabriel sigue siendo el responsable del equipo.
+    aprueban_ademas: co_owners_con_autoridad
+
+    # Direccion puede aprobar cualquier HITL de cualquier equipo. Es la valvula de escape
+    # que evita que un owner de vacaciones congele la operacion, y por eso queda escrita
+    # y no implicita.
+    comodin_direccion: true
   bitacora: svc-runlog          # nativa, sin espejeo desde un SaaS externo
   campos_obligatorios:
     [trace_id, agente, accion_act, umbral_disparado, resumen_linea, entregable_url, sla]
+  # Esta tabla la lee services/runlog/sla.py. Hasta v3.0.1 estaba declarada aqui y el
+  # codigo tenia su propia copia en duro: cambiar un plazo aqui no cambiaba nada. Ahora
+  # es la fuente unica, y por eso las dos consecuencias van en campos separados en vez
+  # de en una etiqueta compuesta que habia que interpretar.
+  #
+  # al_vencer: que pasa la primera vez que vence.
+  # luego:     que pasa si vuelve a vencer despues de haber escalado.
+  #
+  # Ninguno de los dos puede ser "aprobar". Es regla dura (§7.3) y el codigo la impone:
+  # services/runlog/sla.py levanta NuncaAutoAprueba si alguien la escribe aqui.
+  #
+  # El reloj que mide estos plazos es horario de oficina, no horas de calendario:
+  # registry/policies/calendario-laboral.yaml
   sla:
-    alta:  { horas_habiles: 4,  al_vencer: escala_y_bloquea }   # pago, CFDI, contrato, siniestro severo
-    media: { dias_habiles: 1,   al_vencer: escala_una_vez_luego_expira }
-    baja:  { dias_habiles: 3,   al_vencer: expira_no_atendido }
+    # pago, CFDI, contrato, siniestro severo
+    alta:  { horas_habiles: 4, al_vencer: escalar, luego: bloquear, resumen: escala_y_bloquea }
+    media: { dias_habiles: 1,  al_vencer: escalar, luego: expirar,  resumen: escala_una_vez_luego_expira }
+    baja:  { dias_habiles: 3,  al_vencer: expirar, luego: expirar,  resumen: expira_no_atendido }

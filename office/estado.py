@@ -14,7 +14,7 @@ import yaml
 
 from agents import memoria as memoria_mod
 from agents.perfiles import cargar_identidades, cargar_perfiles
-from office import bitacora
+from office import bitacora, pausa_pg
 from office.encargos import Encargo, cargar_todos, por_agente
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -29,11 +29,26 @@ POSTURAS = {
     "libre": "disponible",
     "listo": "listo, sin encender",
     "vacante": "silla vacia",
+    "retirado": "retirado",
 }
 
 
 def leer_pausa() -> dict:
-    """La pausa de la oficina, si la hay. Un archivo ausente significa oficina abierta."""
+    """La pausa de la oficina, si la hay.
+
+    **La fuente es Postgres cuando hay base configurada** (docs/portal.md §4). El portal la
+    escribe ahi, y `runtime.convocar()` la lee en cada convocatoria: si cada uno mirara un
+    sitio distinto, Direccion pausaria desde la pantalla y el CLI seguiria convocando. La
+    pausa no pausaria.
+
+    Sin base configurada se lee `office/pausa.yaml`, que es el modo de desarrollo local de
+    siempre. Lo que NO ocurre nunca es asumir "oficina abierta" porque la base no respondio:
+    `pausa_pg.leer` levanta `PausaIlegible` y la convocatoria se cae con un motivo legible.
+    Un control que ante la duda deja pasar no es un control.
+    """
+    if pausa_pg.dsn():
+        return pausa_pg.leer()
+
     if not PAUSA.is_file():
         return {"activa": False}
     datos = yaml.safe_load(PAUSA.read_text(encoding="utf-8")) or {}
@@ -56,6 +71,10 @@ def _serializable(valor):
 
 
 def _postura(quien, encargos: list[Encargo], pausada: bool = False) -> str:
+    if getattr(quien, "retirado", False):
+        # Gana sobre todo lo demas, incluso sobre la pausa de la oficina: una oficina que
+        # se reanuda no resucita a nadie.
+        return "retirado"
     if quien.listo:
         # El escritorio está puesto y el contrato escrito. Lo que falta no es trabajo del
         # agente: son sus condiciones de encendido, y ésas las cierra la empresa.
@@ -120,6 +139,7 @@ def construir() -> dict:
             "agentes": len(agentes),
             "disponibles": sum(1 for a in agentes if a["disponible"]),
             "listos": sum(1 for a in agentes if a["listo"]),
+            "retirados": sum(1 for a in agentes if a.get("retirado")),
             "encargos": len(encargos),
             "abiertos": sum(1 for e in todos_encargos.values() if e.abierto),
             "bloqueados": sum(1 for e in todos_encargos.values() if e.estado == "bloqueado"),
@@ -145,7 +165,7 @@ def resumen_texto() -> str:
     ]
     for agente in estado["agentes"]:
         marca = {"bloqueado": "!", "en_curso": ">", "pendiente": ".", "libre": " ",
-                 "vacante": "-", "pausado": "=", "listo": "+"}[agente["postura"]]
+                 "vacante": "-", "pausado": "=", "listo": "+", "retirado": "x"}[agente["postura"]]
         titulo = next((e["titulo"] for e in agente["encargos"] if e["estado"] in ("bloqueado", "en_curso")), "")
         lineas.append(
             f" {marca} {agente['nombre']:<8} {agente['id']:<6} {agente['postura_texto']:<18} {titulo[:44]}"

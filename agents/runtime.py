@@ -53,6 +53,16 @@ class OficinaEnPausa(RuntimeError):
     """La oficina esta detenida por decision escrita en office/pausa.yaml."""
 
 
+class AgenteRetirado(AgenteNoDisponible):
+    """El agente fue dado de baja. No se convoca, y su historia sigue consultable.
+
+    Se distingue de `AgenteSinEncender` y de `AgenteNoDisponible` porque las tres tienen
+    salidas distintas: uno espera condiciones, otro espera su fase, y este no espera nada.
+    Decirle "todavia no" a alguien cuyo agente se retiro hace tres meses lo manda a esperar
+    algo que no va a pasar.
+    """
+
+
 def convocar(
     agente_id: str,
     *,
@@ -72,6 +82,18 @@ def convocar(
         )
 
     quien = perfil(agente_id)
+
+    # El retiro se comprueba antes que nada: un agente dado de baja no tiene condiciones
+    # de encendido pendientes ni fase por llegar. No hay nada que esperar.
+    if quien.retirado:
+        retiro = quien.retiro
+        cubre = retiro.get("lo_cubre") or "nadie declarado"
+        raise AgenteRetirado(
+            f"{quien.etiqueta} fue retirado el {retiro.get('fecha', 'sin fecha')} "
+            f"por {retiro.get('por', 'sin responsable')}: {retiro.get('motivo', 'sin motivo declarado')} "
+            f"Su trabajo lo cubre ahora: {cubre}. "
+            f"Su historia sigue en el registro; lo que no vuelve es el agente."
+        )
 
     if quien.listo:
         pendientes = quien.condiciones_pendientes

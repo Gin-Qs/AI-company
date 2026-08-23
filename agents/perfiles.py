@@ -18,6 +18,19 @@ DIR_CONSULTORES = RAIZ / "registry" / "consultants"
 IDENTIDADES = RAIZ / "office" / "identidades.yaml"
 
 
+#: El ciclo de vida de un agente de dominio, en orden. Cada estado responde a una
+#: pregunta distinta, y por eso son cuatro y no un booleano:
+#:
+#:   planned   declarado en el roadmap; todavia no existe
+#:   listo     contrato completo y prompt escrito, con condiciones de encendido pendientes
+#:   built     encendido; se puede convocar
+#:   retirado  dado de baja; el contrato se conserva para poder leer su historia
+#:
+#: La pausa NO esta aqui: es operativa, reversible y vive en la base de datos. Un agente
+#: pausado sigue siendo `built`; simplemente hoy no trabaja.
+ESTADOS = ("planned", "listo", "built", "retirado")
+
+
 class PerfilDesconocido(KeyError):
     """Se pidio un agente que el registro no declara."""
 
@@ -79,6 +92,26 @@ class Perfil:
         return True if self.es_consultor else self.estado == "built"
 
     @property
+    def retirado(self) -> bool:
+        """Dado de baja. El contrato se conserva; el agente no vuelve.
+
+        Es el final del ciclo de vida y se distingue de una pausa a proposito. Pausar es
+        operativo y reversible: se escribe en la base de datos, con motivo y condicion de
+        reanudacion (docs/portal.md §6, tabla `agente_pausa`). Retirar es contractual y
+        definitivo: se escribe en el YAML, pasa por PR y queda en el historial de git.
+
+        Un agente retirado NO se borra. Borrarlo dejaria huerfanos sus encargos, su memoria
+        y cada `trace_id` donde aparece como actor, y la pregunta "quien decidio esto en
+        marzo" dejaria de tener respuesta.
+        """
+        return not self.es_consultor and self.estado == "retirado"
+
+    @property
+    def retiro(self) -> dict:
+        """Por que se retiro, quien lo decidio y quien cubre su trabajo ahora."""
+        return dict(self.registro.get("retiro") or {})
+
+    @property
     def listo(self) -> bool:
         """Contrato completo y prompt escrito, pero sin encender.
 
@@ -131,6 +164,8 @@ class Perfil:
             "estado": self.estado,
             "disponible": self.disponible,
             "listo": self.listo,
+            "retirado": self.retirado,
+            "retiro": self.retiro,
             "condiciones_encendido": self.condiciones_encendido,
             "zona": self.zona,
             "escritorio": self.escritorio,
