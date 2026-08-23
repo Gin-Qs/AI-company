@@ -3,11 +3,29 @@
 > Este documento es el entregable de `E-012` — *"Alcance del MVP del ERP para autorización
 > de Dirección"*, el encargo que está `bloqueado` esperando exactamente esto.
 >
-> **Estado: Fase 0 en marcha.** Construidos y verificados: la CI (§11), el puerto del
-> calendario laboral a TypeScript (§8.1), y el calendario y los SLA convertidos en
-> configuración leída desde YAML por las dos implementaciones. Falta `migrar_a_postgres.py`
-> (§9), que necesita que exista la base de datos. Las Fases A–C esperan las cuentas y la
-> decisión de §7.2.
+> **Estado: Fases 0, A y B construidas.**
+>
+> Fase 0 completa: la CI (§11) —ahora con el paso que publica a `validacion_registro`—, el
+> puerto del calendario laboral (§8.1), el calendario y los SLA como configuración, y
+> `scripts/migrar_a_postgres.py` (§9), escrito y probado con 26 pruebas.
+>
+> Fase A completa: las cinco vistas de lectura (1, 2, 3, 6, 7) y la segunda puerta de §7.4 —
+> autenticado no es autorizado.
+>
+> Fase B completa: la bandeja de HITL (vista 4) con el candado de §8.4, la pausa de la
+> oficina (vista 9) y *Convocar agente* (vista 8), cuyas reglas se contrastan contra
+> `agents/runtime.py` con 37 vectores dorados. Y la pausa dejó de tener dos verdades: §4
+> cumplido, `office/estado.py:leer_pausa()` lee Postgres.
+>
+> **La base ya existe y está sembrada.** Contraseña restablecida, `scripts/sql/0002` aplicado
+> y `migrar_a_postgres.py` corrido: 6 personas, 42 eventos, 18 casos, 12 encargos, 27 notas y
+> 1 pausa. La proyección en Postgres es **idéntica campo por campo** al plegado de
+> `svc-runlog` desde el archivo, y correrla otra vez escribe cero filas. Ver §13.
+>
+> **El portal ya se vio con sesión iniciada** (23-ago). `fleeterceo` entra, la barra dice
+> `Gabriel · direccion`, y los datos de las vistas de lectura cuadran con `office.cli estado`
+> y el validador — §13.4. Falta el secreto `DIRECT_URL` en GitHub (§19.3) y el proyecto de
+> Vercel (§19.5).
 
 ## 1. Qué es esto, en una frase
 
@@ -489,10 +507,23 @@ servicios `svc-*` se excluyen del panorama porque cuestan cero.
 
 ## 9. La siembra inicial
 
-`scripts/migrar_a_postgres.py`, por escribir. Idempotente, igual que
+`scripts/migrar_a_postgres.py` `[CONSTRUIDO]`. Idempotente, igual que
 `scripts/migrar_bitacora.py`, y con la misma disciplina: **conserva la fecha y el trace
 originales**. Un registro que se rellena con la fecha de la importación deja de servir para
 reconstruir el pasado.
+
+Se parte en dos a propósito: `plan()` arma las sentencias y no abre una conexión; `ejecutar()`
+las corre. Por eso se puede probar entero sin base de datos —26 pruebas en
+`tests/unit/test_migrar_a_postgres.py`—, que es lo único que hoy se puede hacer. Tres modos:
+
+```bash
+python scripts/migrar_a_postgres.py --simular          # cuenta y no escribe
+python scripts/migrar_a_postgres.py --sql siembra.sql  # deja el SQL revisable
+python scripts/migrar_a_postgres.py                    # escribe, con DIRECT_URL
+```
+
+Hoy produce **106 sentencias**: 6 personas, 42 eventos, 18 casos, 12 encargos, 27 notas de
+memoria y 1 pausa.
 
 Importa, en este orden:
 
@@ -508,7 +539,39 @@ Importa, en este orden:
 **Criterio de aceptación de la migración, verificable:** `python -m office.cli estado` leyendo
 Postgres produce **byte por byte** la misma salida que hoy leyendo archivos. Se captura la
 salida actual antes de migrar y se compara con `diff`. Si difiere, la migración está mal, y se
-sabe antes de que alguien dependa de ella.
+sabe antes de que alguien dependa de ella. **Pendiente:** necesita la contraseña.
+
+### 9.1 Tres cosas que este plan declaraba distinto, y que los datos corrigieron
+
+Escribir la siembra obligó a mirar los archivos que iba a recibir, y tres afirmaciones de
+arriba no sobrevivieron. Se corrige el plan y el esquema, nunca el dato: ajustar los datos
+para que quepan en una tabla es exactamente cómo un sistema empieza a mentir.
+
+**9.1.1 — No son 12 casos, son 18.** `data/runlog/runlog.jsonl` tiene 18 traces. Doce son los
+encargos; los otros seis son casos que no nacieron de un encargo. El "12" de arriba contaba
+encargos y los llamaba casos.
+
+**9.1.2 — Un encargo lo puede convocar un agente, y el esquema no lo permitía.** §6 declaró
+`encargos.convocado_por uuid not null references personas(id)`. Pero **nueve de los doce**
+encargos dicen `convocado_por: D5-01` — el Jefe de Gabinete, que es un agente. La FK
+obligatoria sólo se podía satisfacer inventando: metiendo a D5-01 en `personas` (un agente no
+es una persona, y `personas` es el puente con Clerk), o poniendo ahí al owner humano de su
+equipo (atribuirle a Gabriel una convocatoria que no hizo).
+
+Se corrige el esquema. `convocado_por` pasa a ser opcional y se agrega `convocado_por_actor`,
+que guarda lo que el YAML dice literalmente. El SQL está en
+`scripts/sql/0002-siembra-idempotente.sql` y **está sin aplicar**: es lo primero que hay que
+correr cuando exista la contraseña, antes de la siembra.
+
+Ese mismo archivo agrega dos claves naturales que faltaban. `memoria_notas` y `pausa` se
+declararon con `bigserial` y ninguna restricción más, y una tabla sin clave natural no se
+puede sembrar dos veces: la segunda corrida duplica todo. Sin eso la migración no es
+reejecutable, que es justo lo que §9 exige de ella.
+
+**9.1.3 — `eventos.autor_persona` se queda en null casi siempre, y está bien.** Sólo se llena
+cuando el evento nombra a una persona que existe en el gate (`entradas.autor`). Los pasos que
+ejecutó un agente quedan sin autor: poner ahí al owner humano de su equipo convertiría una
+suposición en un dato de auditoría. Un agente ejecuta; una persona autoriza.
 
 ## 10. Vistas
 
@@ -563,15 +626,47 @@ apoyándose en una CI que no existe reporta su propia ausencia de datos como si 
 
 Criterios de `E-008`, en orden de ejecución:
 
-1. **Antes de tocar nada:** `python -m pytest` y `validate_registry.py` en verde. Se guarda la
-   salida de `office.cli estado` como línea base.
-2. **Migración:** `diff` entre la línea base y `office.cli estado` leyendo Postgres. Idéntico o
-   la migración se rehace (§9).
-3. **Puerto del SLA:** el test de TypeScript contra `tests/fixtures/sla-vectores.json` en
+1. ✅ **Antes de tocar nada:** `python -m pytest` y `validate_registry.py` en verde. Se guarda
+   la salida de `office.cli estado` como línea base.
+2. ✅ **Migración**, con una corrección al método. El criterio original —`diff` contra
+   `office.cli estado` leyendo Postgres— **no se puede correr todavía**: ese cambio de fuente
+   es §4 y aún no está hecho, así que el CLI sigue leyendo archivos y compararlo consigo mismo
+   no probaría nada.
+
+   Se verificó lo que ese `diff` pretendía verificar, y más de cerca: se comparó la tabla
+   `casos` contra `RunLog.casos()` **campo por campo** en los 18 casos (tipo, referencia,
+   criticidad, estado, responsable, reintentos, escalamientos, pasos, tokens, costo) y el
+   `datos` jsonb de los 42 eventos contra su línea original del JSONL. Resultado: idéntico.
+   Además: ningún evento quedó con fecha posterior al 20 de agosto —las fechas se conservaron,
+   no se rellenaron con la de la importación—, ningún `seq` salta, y `casos.ultimo_seq` cuadra
+   con el último evento de cada trace, que es de lo que depende el candado de §8.4.
+
+   Y la propiedad que un `diff` no habría probado: **correr la siembra otra vez escribe cero
+   filas**. Es idempotente de verdad, no de palabra.
+3. ✅ **Puerto del SLA:** el test de TypeScript contra `tests/fixtures/sla-vectores.json` en
    verde, los 17 vectores.
-4. **Fase A:** login, y los datos de las vistas de lectura cuadran con `office.cli estado` y
-   `validate_registry.py --verbose` corridos en paralelo.
-5. **Fase B:** dos navegadores con personas distintas. Una intenta aprobar un HITL fuera de su
+
+3-bis. ✅ **El SQL del portal contra el esquema real.** No estaba en la lista original y hacía
+   falta: el SQL no se tipa. `tsc` valida que `Caso.costo_mxn` sea `string` y no mira si la
+   columna se llama así, de modo que una tabla que cambia de forma compila perfecto y falla en
+   la primera petición. `web/lib/db/consultas.test.ts` corre las nueve consultas del portal
+   contra Postgres. **Se salta sola** —y lo dice— cuando no hay credenciales, para que la CI y
+   quien clone el repositorio no dependan de la base.
+4. ✅ **Fase A:** login hecho —`fleeterceo` entra y la barra dice `Gabriel · direccion`— y
+   los datos cuadran con el CLI y el validador corridos en paralelo:
+
+   | | Portal | `office.cli estado` / `validate_registry.py` |
+   |---|---|---|
+   | Agentes de dominio | 8 | 8 |
+   | Consultores | 9 | 9 |
+   | Disponibles | 11/17 | 11/17 |
+   | Encargos | 12 (2 en curso, 1 bloqueado, 0 hechos) | 12 abiertos (2 en curso, 1 bloqueados), 0 hechos |
+   | Oficina en pausa | no | «Oficina abierta» |
+
+   Las dos primeras filas salen de `registry/` y las dos últimas de Postgres, así que la
+   coincidencia prueba las dos mitades: que el puerto del registro a TypeScript lee lo mismo
+   que Python, y que la siembra no perdió ni inventó nada.
+5. ⏳ **Fase B:** dos navegadores con personas distintas. Una intenta aprobar un HITL fuera de su
    equipo → se rechaza. La otra dentro del suyo → pasa y queda registrado con su nombre. Las
    dos aprueban el mismo HITL a la vez → una gana, la otra ve el mensaje de §8.4, y el registro
    tiene **un** evento, no dos.
@@ -634,15 +729,22 @@ de migración (§9) y la app completa contra un Postgres local y un Clerk en mod
 
 ## 16. Fases
 
-| | Qué | Depende de |
+| | Qué | Estado |
 |---|---|---|
-| **0** | ~~CI (§11)~~ ✅ · ~~puerto del SLA (§8.1)~~ ✅ · ~~calendario y SLA configurables~~ ✅ · falta `migrar_a_postgres.py` (§9) | Lo que falta depende de que exista la base de datos |
-| **A** | Esqueleto + sólo lectura. Vistas 1, 2, 3, 6, 7 | Fase 0, y las tres cuentas |
-| **B** | Acciones: aprobar/rechazar HITL, convocar, pausar. Vistas 4, 8, 9 | Fase A + **la decisión de §7.2** |
-| **B+** | Cerrar `cumplida: true` en la condición de bandeja de HITL de los cinco agentes | Fase B verificada en producción |
+| **0** | CI (§11) · puerto del SLA (§8.1) · calendario y SLA configurables · `migrar_a_postgres.py` (§9) | ✅ **construida** |
+| **A** | Esqueleto + sólo lectura. Vistas 1, 2, 3, 6, 7, y la segunda puerta de §7.4 | ✅ **construida** |
+| **B** | Acciones: aprobar/rechazar HITL (vista 4) · pausar (vista 9) · convocar (vista 8) | ✅ **construida** |
+| **B+** | Cerrar `cumplida: true` en la condición de bandeja de HITL de los cinco agentes | Fase B verificada **en producción** |
 | **C** | Presupuesto (vista 5), pixel art embebido (vista 10), diseño final | Fase B. La vista 5 sólo tiene datos después de encender el primer agente |
 
 La fila **B+** es el punto del ejercicio. Todo lo demás es infraestructura para llegar ahí.
+
+**Una advertencia sobre las palomas de arriba.** "Construida" significa *escrita, tipada y
+probada*, no *corrida contra Postgres*. La Fase 0 se verificó entera —el plan de siembra se
+prueba sin base de datos a propósito, §9—, pero las Fases A y B leen y escriben en tablas que
+hoy nadie ha tocado. La verificación de §13 pasos 2, 4 y 5 sigue pendiente y **no se puede
+hacer sin la contraseña**. Marcar B+ exige exactamente esos pasos, y por eso B+ sigue en
+blanco.
 
 ## 17. Ciclo de vida de un agente `[CONSTRUIDO]`
 
@@ -697,3 +799,77 @@ condiciones de encendido. El estado no se sube a mano sin cerrar lo que el estad
 agente rompía la suite — lo contrario de un sistema que crece. Ahora las cifras se **derivan
 del registro**: la prueba afirma que el plano dibuja exactamente a quien tiene identidad, no
 que sean diecisiete. La relación es la invariante; el número es una consecuencia.
+
+## 18. Qué hace el portal cuando no hay base de datos `[CONSTRUIDO]`
+
+Hoy no la hay, y no es un detalle de configuración: decide cómo se ven seis de las diez
+vistas. Una vista sin base puede hacer dos cosas, y sólo una es aceptable:
+
+1. **Pintar ceros, tablas vacías y barras al 0%.** Se ve como un sistema que funciona y no
+   tiene nada que reportar. Es indistinguible de la verdad, y es mentira.
+2. **Decir en pantalla que no hay conexión, por qué, y qué falta.**
+
+Se hace (2), siempre, y no por disciplina sino por tipos. Ninguna consulta de `lib/db/`
+devuelve `T`: devuelven `Lectura<T>`, una unión discriminada donde `datos` **no existe** hasta
+haber comprobado `ok`. Quien pinta la página está obligado por el compilador a decidir qué
+enseña cuando no hay datos. Un tipo que no se puede ignorar es la única forma de que esto siga
+siendo verdad dentro de seis meses.
+
+Tres estados, con tres mensajes distintos porque mandan a hacer tres cosas distintas:
+
+| Estado | Qué pasó | A dónde manda |
+|---|---|---|
+| `sin_configurar` | `DATABASE_URL` no existe | Ponerla en `web/.env.local` o en Vercel |
+| `marcador` | trae `CONTRASENA`, el marcador | **Restablecer** la contraseña en Supabase, no buscarla |
+| `error` | Postgres respondió con un error | El mensaje crudo, a la vista |
+
+Y un cuarto estado que **no** es ninguno de los anteriores: hay base, la consulta corrió y no
+devolvió filas. Ese vacío es legítimo y se pinta distinto. Confundirlo con los otros tres es
+lo que hace que un portal diga "todo bien" cuando lo que pasa es que no se conectó.
+
+El mismo criterio en dos sitios más:
+
+- **La sesión (§7.4)** tiene tres estados, no dos: `vinculada`, `no_vinculada` y
+  `sin_verificar`. Colapsar el tercero en el segundo sería decirle a alguien "tu cuenta no
+  está vinculada" cuando la verdad es "no pude comprobarlo". Las lecturas funcionan con
+  `sin_verificar` —el registro vive en git, no en la base—; **toda escritura lo rechaza**. No
+  poder comprobar quién eres no es permiso para actuar, y un evento sin autor no es auditable.
+- **El presupuesto** no lleva barras de porcentaje, y no por falta de tiempo. `budget.yaml`
+  declara `calibrado: false`: los topes son un punto de partida derivado del nivel de modelo,
+  no de consumo observado. Una barra al 40% de un tope inventado se lee como autoridad.
+
+## 19. Lo que falta, en orden
+
+Lo primero no es código. Son tres cosas que sólo puede hacer una persona con las cuentas:
+
+1. ~~Restablecer la contraseña de Postgres.~~ ✅ **hecha.** Las dos cadenas de
+   `web/.env.local` conectan (PostgreSQL 17.6).
+2. ~~Aplicar `scripts/sql/0002` y correr la siembra.~~ ✅ **hechas**, en ese orden, y
+   verificadas contra el archivo (§13.2).
+3. ~~Poner `DIRECT_URL` como secreto del repositorio.~~ ✅ **puesto** (23-ago). La vista 7
+   se llena con la primera corrida de CI que suba a este repositorio.
+4. ~~Crear un usuario en Clerk y vincularlo.~~ ✅ **hecho.** `fleeterceo` (Gabriel Sanchez)
+   está enlazado a la fila `Gabriel` de `personas`, y la cadena completa de §7 resuelve:
+   `clerk_user_id → personas.nombre → authority-gate.yaml → rol direccion`. Las otras cinco
+   personas siguen sin vincular, que es correcto — se vinculan cuando cada quien acepte su
+   invitación.
+
+5. **Un proyecto en Vercel.** Lo intenté por el conector y responde **403: sin permiso para
+   crear proyectos**, así que este paso es tuyo. Y tiene un orden que importa, porque hoy
+   **`main` no tiene `web/`**: el portal entero vive en la rama `portal-de-mando`, con el
+   PR #5 abierto. Crear el proyecto y desplegar ahora construiría un repositorio sin app.
+
+   1. Commitear y empujar el trabajo (las Fases 0, A y B siguen sin commit).
+   2. Mergear el PR #5, o poner `portal-de-mando` como *production branch* mientras tanto.
+   3. Crear el proyecto: root directory `web/`.
+   4. **Activar Vercel Authentication ANTES del primer despliegue.** Los proyectos nuevos
+      nacen sin protección, y un preview abierto es el portal entero sin Clerk delante —
+      ahora con datos reales dentro.
+   5. Las cuatro variables de entorno: `DATABASE_URL`, `DIRECT_URL`,
+      `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`.
+
+La **vista 8** ya no está en esta lista: se construyó. Envuelve las reglas de
+`agents/runtime.py:convocar()` —pausa activa, estado `listo`/`planned`, `invocable_por`,
+encargo ambiguo— y no de oídas: `scripts/vectores_convocatoria.py` llama al Python real agente
+por agente y `web/lib/convocar.test.ts` exige el mismo veredicto en los 37 casos. La CI
+comprueba que los vectores sigan al día, igual que con los del SLA.

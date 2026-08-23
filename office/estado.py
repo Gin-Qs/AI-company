@@ -14,7 +14,7 @@ import yaml
 
 from agents import memoria as memoria_mod
 from agents.perfiles import cargar_identidades, cargar_perfiles
-from office import bitacora
+from office import bitacora, pausa_pg
 from office.encargos import Encargo, cargar_todos, por_agente
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -34,7 +34,21 @@ POSTURAS = {
 
 
 def leer_pausa() -> dict:
-    """La pausa de la oficina, si la hay. Un archivo ausente significa oficina abierta."""
+    """La pausa de la oficina, si la hay.
+
+    **La fuente es Postgres cuando hay base configurada** (docs/portal.md §4). El portal la
+    escribe ahi, y `runtime.convocar()` la lee en cada convocatoria: si cada uno mirara un
+    sitio distinto, Direccion pausaria desde la pantalla y el CLI seguiria convocando. La
+    pausa no pausaria.
+
+    Sin base configurada se lee `office/pausa.yaml`, que es el modo de desarrollo local de
+    siempre. Lo que NO ocurre nunca es asumir "oficina abierta" porque la base no respondio:
+    `pausa_pg.leer` levanta `PausaIlegible` y la convocatoria se cae con un motivo legible.
+    Un control que ante la duda deja pasar no es un control.
+    """
+    if pausa_pg.dsn():
+        return pausa_pg.leer()
+
     if not PAUSA.is_file():
         return {"activa": False}
     datos = yaml.safe_load(PAUSA.read_text(encoding="utf-8")) or {}

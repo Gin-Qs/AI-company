@@ -83,3 +83,65 @@ th { color: var(--tenue); font-size: 12.5px; text-transform: uppercase; letter-s
 }
 .aviso strong { color: var(--ambar); }
 .centrado { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+
+/* --- buscador de casos (vista 6) ---------------------------------------- */
+.buscador { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+.buscador input {
+  flex: 1; min-width: 240px; padding: 9px 13px; font: inherit; font-size: 14.5px;
+  color: var(--texto); background: var(--superficie);
+  border: 1px solid var(--borde); border-radius: 8px;
+}
+.buscador input:focus { outline: 2px solid var(--ambar); outline-offset: 1px; }
+.buscador button {
+  padding: 9px 16px; font: inherit; font-size: 14.5px; font-weight: 600;
+  color: var(--texto); background: var(--superficie);
+  border: 1px solid var(--borde); border-radius: 8px; cursor: pointer;
+}
+.buscador button:hover { border-color: var(--tenue); }
+
+/* Lo que hay que mirar antes de que se vuelva un problema: un caso con los dos reintentos
+   gastados, un escalamiento, una regla en falla. No es decoracion. */
+.alarma { color: var(--rojo); }
+
+/* El vacio legitimo —hay base y no hay filas— NO es `.centrado`, que ocupa la pantalla
+   entera y esta reservado para las puertas del portal (login, cuenta sin vincular). */
+.vacio { text-align: center; padding: 30px 18px; }
+.vacio .nota { margin: 0 auto; max-width: 62ch; }
+
+/* Quien esta viendo el portal, y con que autoridad. El rol se deriva del registro en cada
+   peticion (§7): si cambia un `owner_humano` en registry/teams/, cambia aqui. */
+.quien { color: var(--texto); font-size: 13.5px; font-weight: 550; margin-left: auto; }
+.quien .nota { display: inline; font-size: 13px; }
+
+/* --- resolver un HITL (vista 4) y los formularios de accion (vista 9) ------ */
+.resolver { display: grid; gap: 6px; min-width: 260px; }
+.resolver input, .formulario input, .formulario textarea {
+  padding: 7px 11px; font: inherit; font-size: 13.5px; color: var(--texto);
+  background: var(--fondo); border: 1px solid var(--borde); border-radius: 7px;
+  width: 100%;
+}
+.resolver input:focus, .formulario input:focus, .formulario textarea:focus {
+  outline: 2px solid var(--ambar); outline-offset: 1px;
+}
+.resolver button, .formulario button {
+  padding: 7px 14px; font: inherit; font-size: 13.5px; font-weight: 600;
+  color: var(--fondo); background: var(--texto);
+  border: 1px solid var(--texto); border-radius: 7px; cursor: pointer;
+}
+.resolver button:disabled, .formulario button:disabled { opacity: .45; cursor: not-allowed; }
+.resolver .secundario, .formulario .secundario {
+  color: var(--texto); background: transparent; border-color: var(--borde);
+}
+.resolver > div { display: flex; gap: 6px; }
+
+.formulario { display: grid; gap: 10px; max-width: 620px; }
+.formulario label { font-size: 13.5px; font-weight: 550; }
+.formulario textarea { min-height: 74px; resize: vertical; }
+
+/* El selector de agente de la vista 8. Hereda del resto de campos del formulario. */
+.formulario select {
+  padding: 7px 11px; font: inherit; font-size: 13.5px; color: var(--texto);
+  background: var(--fondo); border: 1px solid var(--borde); border-radius: 7px; width: 100%;
+}
+.formulario select:focus { outline: 2px solid var(--ambar); outline-offset: 1px; }
+.formulario ul { margin: 6px 0 0 18px; }

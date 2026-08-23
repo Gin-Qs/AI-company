@@ -42,8 +42,11 @@ jobs:
       - name: Instalar
         run: python -m pip install -e ".[dev]"
 
+      # `--junitxml` no es decoracion: la fila de `validacion_registro` lleva `pytest_ok` y
+      # `pytest_total`, y los dos salen de ese archivo. Un "en verde" que no dice cuantas
+      # pruebas corrieron se ve igual con 290 pruebas que con ninguna.
       - name: Pruebas
-        run: python -m pytest
+        run: python -m pytest --junitxml=pytest.xml
 
       # --verbose lista las reglas omitidas con su motivo. Una regla omitida no es una
       # regla en verde y el log tiene que dejar ver la diferencia.
@@ -58,10 +61,38 @@ jobs:
           git diff --exit-code -- tests/fixtures/sla-vectores.json \
             || { echo "::error::tests/fixtures/sla-vectores.json quedo desfasado de services/runlog/sla.py. Corre 'python scripts/vectores_sla.py' y agrega el resultado al commit."; exit 1; }
 
-      # El portal lee este resultado para pintar la salud del registro sin reimplementar
-      # ninguna de las 16 reglas. Mientras no exista DATABASE_URL, queda como artefacto
-      # descargable: el paso que lo publica a Postgres se agrega junto con la base, para
-      # no subir codigo que nadie pudo correr todavia.
+      # Mismo guardian que los vectores del SLA, y por la misma razon: el portal
+      # reimplementa las reglas de convocatoria en TypeScript, y una reimplementacion que
+      # nadie contrasta diverge en silencio. El modo de fallo aqui no es un error visible,
+      # es que el portal deje convocar a un agente que el CLI habria rechazado.
+      - name: Los vectores de convocatoria siguen al dia
+        run: |
+          python scripts/vectores_convocatoria.py
+          git diff --exit-code -- tests/fixtures/convocatoria-vectores.json \
+            || { echo "::error::tests/fixtures/convocatoria-vectores.json quedo desfasado de agents/runtime.py. Corre 'python scripts/vectores_convocatoria.py' y agrega el resultado al commit."; exit 1; }
+
+      # LA TERCERA COSA QUE PIDE §11: escribir el resultado a `validacion_registro`.
+      #
+      # El portal lee la ultima fila de esta tabla para pintar la vista 7 sin reimplementar
+      # ninguna de las 16 reglas. Cero duplicacion, cero deriva posible.
+      #
+      # `if: always()` a proposito: la corrida que MAS importa publicar es la que fallo. Si
+      # solo se publicaran las verdes, el portal ensenaria salud perfecta justo cuando el
+      # registro esta roto.
+      #
+      # Sin el secreto DIRECT_URL el script avisa y sale en 0 — un PR de quien no tiene
+      # acceso a la base no se reprueba por eso, pero el aviso queda en el log y la vista
+      # sigue mostrando la fecha de la ultima corrida que si se publico.
+      - name: Publicar la salud del registro
+        if: always()
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          python -m pip install "psycopg[binary]>=3.2"
+          python scripts/publicar_validacion.py validacion.json --pytest-xml pytest.xml
+
+      # Y ademas como artefacto descargable: si el secreto no esta puesto, esto sigue siendo
+      # la unica copia del resultado.
       - name: Guardar el resultado
         if: always()
         uses: actions/upload-artifact@v4
