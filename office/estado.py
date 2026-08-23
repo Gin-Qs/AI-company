@@ -29,6 +29,7 @@ POSTURAS = {
     "libre": "disponible",
     "listo": "listo, sin encender",
     "vacante": "silla vacia",
+    "retirado": "retirado",
 }
 
 
@@ -56,6 +57,10 @@ def _serializable(valor):
 
 
 def _postura(quien, encargos: list[Encargo], pausada: bool = False) -> str:
+    if getattr(quien, "retirado", False):
+        # Gana sobre todo lo demas, incluso sobre la pausa de la oficina: una oficina que
+        # se reanuda no resucita a nadie.
+        return "retirado"
     if quien.listo:
         # El escritorio está puesto y el contrato escrito. Lo que falta no es trabajo del
         # agente: son sus condiciones de encendido, y ésas las cierra la empresa.
@@ -120,6 +125,7 @@ def construir() -> dict:
             "agentes": len(agentes),
             "disponibles": sum(1 for a in agentes if a["disponible"]),
             "listos": sum(1 for a in agentes if a["listo"]),
+            "retirados": sum(1 for a in agentes if a.get("retirado")),
             "encargos": len(encargos),
             "abiertos": sum(1 for e in todos_encargos.values() if e.abierto),
             "bloqueados": sum(1 for e in todos_encargos.values() if e.estado == "bloqueado"),
@@ -145,7 +151,7 @@ def resumen_texto() -> str:
     ]
     for agente in estado["agentes"]:
         marca = {"bloqueado": "!", "en_curso": ">", "pendiente": ".", "libre": " ",
-                 "vacante": "-", "pausado": "=", "listo": "+"}[agente["postura"]]
+                 "vacante": "-", "pausado": "=", "listo": "+", "retirado": "x"}[agente["postura"]]
         titulo = next((e["titulo"] for e in agente["encargos"] if e["estado"] in ("bloqueado", "en_curso")), "")
         lineas.append(
             f" {marca} {agente['nombre']:<8} {agente['id']:<6} {agente['postura_texto']:<18} {titulo[:44]}"

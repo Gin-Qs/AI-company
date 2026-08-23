@@ -11,14 +11,21 @@ Una regla omitida no es una regla en verde: se distingue en la salida para que
 nadie confunda "no aplica todavia" con "cumple".
 
 Uso:
-    python scripts/validate_registry.py [--raiz .] [--verbose]
+    python scripts/validate_registry.py [--raiz .] [--verbose] [--json ARCHIVO]
 
 Codigo de salida 0 si ninguna regla falla, 1 si alguna falla.
+
+--json escribe el mismo resultado en forma legible por maquina, con la forma exacta
+de la tabla `validacion_registro` (docs/portal.md §6). Lo consume la CI, que lo
+publica para que el portal muestre la salud del registro sin reimplementar ninguna
+de estas reglas. La fuente de verdad sigue siendo este archivo, y solo este.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -49,6 +56,16 @@ class Resultado:
         if self.omitida:
             return "OMITIDA"
         return "FALLA" if self.fallas else "OK"
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "numero": self.numero,
+            "descripcion": self.descripcion,
+            "estado": self.estado,
+            "fallas": list(self.fallas),
+            "pendientes": list(self.pendientes),
+            "omitida": self.omitida,
+        }
 
 
 @dataclass
@@ -423,6 +440,63 @@ def regla_13(reg: Registro) -> Resultado:
     return r
 
 
+def regla_14(reg: Registro) -> Resultado:
+    """Propia del portal: retirar un agente es una decision, y una decision se firma.
+
+    Dar de baja a un agente es facil y por eso es peligroso. Lo que se pierde no es el
+    agente: es la respuesta a "quien hacia esto antes y por que dejo de hacerlo". Esta
+    regla obliga a que el retiro traiga fecha, responsable, motivo y —lo mas importante—
+    quien cubre ese trabajo ahora. Un equipo cuyo unico agente se retiro sin decir quien
+    lo sustituye es un hueco operativo que nadie va a notar hasta que haga falta.
+
+    El contrato del agente retirado NO se borra nunca: sus encargos, su memoria y cada
+    trace donde aparece como actor tienen que seguir siendo legibles.
+    """
+    r = Resultado("14", "Todo agente `retirado` declara por que y quien cubre su trabajo")
+    retirados = {aid: a for aid, a in reg.agentes.items() if str(a.get("estado")) == "retirado"}
+    if not retirados:
+        r.omitida = "no hay agentes retirados"
+        return r
+
+    for agente_id, agente in retirados.items():
+        retiro = agente.get("retiro")
+        if not isinstance(retiro, dict) or not retiro:
+            r.fallas.append(f"{agente_id} esta retirado sin bloque `retiro`: no se sabe por que ni desde cuando")
+            continue
+        for campo, queja in (
+            ("fecha", "desde cuando"),
+            ("por", "quien lo decidio"),
+            ("motivo", "por que"),
+            ("lo_cubre", "quien cubre ese trabajo ahora"),
+        ):
+            if not str(retiro.get(campo) or "").strip():
+                r.fallas.append(f"{agente_id}.retiro no declara {campo}: falta {queja}")
+
+        # Quien lo cubre tiene que existir, o decir explicitamente que nadie lo cubre.
+        cubre = str(retiro.get("lo_cubre") or "").strip()
+        if cubre and cubre != "nadie" and cubre not in reg.agentes and not cubre.startswith("svc-"):
+            r.fallas.append(
+                f"{agente_id}.retiro declara lo_cubre: {cubre}, que no es un agente del registro "
+                f"ni un servicio. Si de verdad no lo cubre nadie, escribe `lo_cubre: nadie`"
+            )
+
+        if str(agente.get("estado")) == "retirado" and _lista(agente.get("actions")):
+            r.fallas.append(f"{agente_id} esta retirado y sigue declarando ACT-*: un agente de baja no ejecuta")
+
+    # Un equipo que se quedo sin agente digital vivo.
+    vivos = {aid for aid, a in reg.agentes.items() if str(a.get("estado")) != "retirado"}
+    for equipo_id, equipo in reg.equipos.items():
+        digital = str(equipo.get("owner_digital") or "").strip()
+        if digital and digital in retirados and digital not in vivos:
+            cubre = str((retirados[digital].get("retiro") or {}).get("lo_cubre") or "").strip()
+            if not cubre or cubre == "nadie":
+                r.fallas.append(
+                    f"{equipo_id} tiene como owner_digital a {digital}, que esta retirado y "
+                    f"no declara quien lo cubre: el equipo se quedo sin agente"
+                )
+    return r
+
+
 REGLAS = (
     regla_1,
     regla_2,
@@ -440,6 +514,7 @@ REGLAS = (
     regla_11,
     regla_12,
     regla_13,
+    regla_14,
 )
 
 
@@ -448,15 +523,55 @@ def validar(raiz: Path) -> list[Resultado]:
     return [regla(registro) for regla in REGLAS]
 
 
+def como_json(resultados: list[Resultado], registro: Registro) -> dict[str, object]:
+    """El resultado con la forma de la tabla `validacion_registro` (docs/portal.md §6).
+
+    `commit_sha` y `rama` salen del entorno de GitHub Actions cuando existe. Fuera de la
+    CI quedan vacios a proposito: inventar un commit haria que el portal presuma haber
+    validado algo que nadie valido.
+    """
+    fallidas = [r for r in resultados if r.fallas]
+    omitidas = [r for r in resultados if r.omitida]
+    return {
+        "commit_sha": os.environ.get("GITHUB_SHA", ""),
+        "rama": os.environ.get("GITHUB_REF_NAME", ""),
+        "reglas": [r.as_dict() for r in resultados],
+        "total_reglas": len(resultados),
+        "en_verde": len(resultados) - len(fallidas) - len(omitidas),
+        "en_falla": len(fallidas),
+        "omitidas": len(omitidas),
+        "pendientes": sum(len(r.pendientes) for r in resultados),
+        "registro": {
+            "agentes": len(registro.agentes),
+            "servicios": len(registro.servicios),
+            "consultores": len(registro.consultores),
+            "equipos": len(registro.equipos),
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Valida registry/ contra la seccion 10.3 de la arquitectura v3.")
     parser.add_argument("--raiz", default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument("--verbose", action="store_true", help="lista las reglas omitidas con su motivo")
+    parser.add_argument(
+        "--json",
+        metavar="ARCHIVO",
+        help="escribe el resultado como JSON para la CI (docs/portal.md §11)",
+    )
     args = parser.parse_args(argv)
 
     raiz = Path(args.raiz)
     resultados = validar(raiz)
     registro = cargar_registro(raiz)
+
+    if args.json:
+        destino = Path(args.json)
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_text(
+            json.dumps(como_json(resultados, registro), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
 
     print(
         f"registry: {len(registro.agentes)} agentes, {len(registro.servicios)} servicios, "
