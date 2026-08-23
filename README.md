@@ -61,6 +61,9 @@ auditado ahí. La v3 añade el gobierno alrededor del motor.
   tablero de KPIs y el motor de alertas que decide qué entra al brief.
 - [docs/oficina-virtual.md](docs/oficina-virtual.md) — **los agentes del ERP y su oficina**: quién
   es quién, cómo se convoca, dónde vive su memoria y cómo se lee el plano.
+- [docs/portal.md](docs/portal.md) — **el portal de mando**: la bandeja única de HITL que los
+  cinco agentes del MVP declaran como condición de encendido. Contratos escritos, código sin
+  empezar; es el entregable de `E-012`.
 
 ## Estado
 

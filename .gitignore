@@ -8,3 +8,22 @@ htmlcov/
 data/real/
 data/runlog/
 data/facturacion/
+
+# Secretos del portal. Nunca versionados: las llaves de Clerk y la cadena de
+# Postgres viven aqui y solo aqui. Ver docs/portal.md §15.
+.env
+.env.*
+!.env.example
+web/.env
+web/.env.*
+!web/.env.example
+
+# Next.js
+web/node_modules/
+web/.next/
+web/tsconfig.tsbuildinfo
+web/out/
+web/.vercel/
+
+# Salida de scripts/validate_registry.py --json. La produce la CI en cada corrida.
+validacion.json
