@@ -211,6 +211,20 @@ AI-company/
       schema.prisma   <- traducción del esquema de §6
 ```
 
+**Dos ajustes de Vercel, y sólo uno vive en el dashboard.** El *Root Directory* (`web`) no se
+puede declarar desde el repositorio: es un ajuste del proyecto, y hay que ponerlo a mano. El
+*Framework Preset* sí, y por eso está en `web/vercel.json` con `"framework": "nextjs"`.
+
+La distinción costó cinco despliegues fallidos y conviene que quede escrita. Un proyecto
+creado sin detectar Next.js queda como «Other»: el build de Next **termina bien** —las
+dieciséis rutas, TypeScript en verde— y Vercel tira el resultado buscando un `public/` que no
+existe. El síntoma (`No Output Directory named "public"`) no menciona el framework por ningún
+lado. Y un ajuste que sólo vive en el dashboard no se revisa en un diff, no se restaura si
+alguien recrea el proyecto, y no le dice nada a quien clone el repositorio.
+
+*(Y un aviso de Windows: el Root Directory distingue mayúsculas. `Web` no es `web`, y el build
+de Vercel corre en Linux aunque tú no lo notes en local.)*
+
 **Vercel necesita ver `registry/` desde `web/`.** Con root directory = `web/`, el build por
 defecto no incluye archivos de arriba. Se resuelve declarando `outputFileTracingIncludes` en
 `next.config.js` para `../registry/**` y `../office/identidades.yaml`. Sin eso,
