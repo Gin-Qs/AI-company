@@ -628,8 +628,16 @@ apoyándose en una CI que no existe reporta su propia ausencia de datos como si 
   valida rol y regla de negocio antes de tocar la base. Ningún chequeo del cliente cuenta.
 - **Autor real en cada evento.** `eventos.autor_persona` es una FK a `personas`, poblada desde
   la sesión de Clerk. No es un flag de texto libre como el `--autor` del CLI.
-- **`eventos` sin UPDATE ni DELETE.** El rol de aplicación recibe `INSERT` y `SELECT` sobre esa
-  tabla, nada más. Append-only impuesto por permisos, no por disciplina.
+- **`eventos` sin UPDATE ni DELETE.** *(Corregido tras la auditoría del 24-ago: la propiedad
+  se cumple, pero **por triggers, no por permisos**.* `eventos_sin_update` y
+  `eventos_sin_delete` llaman a `eventos_son_inmutables()` y abortan la operación. Lo que
+  **no** existe es el rol de aplicación separado: el portal se conecta como `postgres`, dueño
+  de las tablas, con `INSERT, UPDATE, DELETE, TRUNCATE` concedidos. La inmutabilidad la
+  sostiene un trigger que ese mismo rol podría quitar.
+  *Consecuencia real:* ninguna hoy — nada en el código emite UPDATE ni DELETE sobre `eventos`,
+  y el trigger lo comprueba. Pero la frase original prometía una garantía más fuerte de la que
+  hay, y un plan que se lee más resuelto de lo que está da permiso para no mirar. Crear el rol
+  restringido queda como deuda declarada, no como algo hecho.)
 - **Postgres administrado** (Supabase): durabilidad y respaldo por defecto. Resuelve de raíz el
   riesgo de perder información en un filesystem efímero.
 - **Concurrencia** por `unique (trace_id, seq)` (§8.4).

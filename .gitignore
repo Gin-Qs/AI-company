@@ -27,3 +27,12 @@ web/.vercel/
 
 # Salida de scripts/validate_registry.py --json. La produce la CI en cada corrida.
 validacion.json
+
+# Herramientas de asistentes: configuracion local, no del proyecto. Sin esto, un
+# `git add -A` las sube y quedan como si fueran parte del sistema.
+.agents/
+.codex/
+.github/agents/
+.github/hooks/
+.github/skills/
+skills-lock.json

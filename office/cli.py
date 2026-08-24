@@ -21,6 +21,7 @@ from agents.runtime import (
     recordar,
 )
 from office import encargos as encargos_mod
+from office.entorno import EscrituraFueraDeLocal, exigir_local
 from office.build import escribir
 from office.estado import resumen_texto
 
@@ -62,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.comando == "convocar":
         try:
+            exigir_local("convocar")
             encargo = convocar(
                 args.agente,
                 titulo=args.titulo,
@@ -71,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
                 depende_de=args.depende_de,
                 hitl=args.hitl,
             )
-        except (PermisoDenegado, EncargoAmbiguo, AgenteNoDisponible, KeyError) as error:
+        except (EscrituraFueraDeLocal, PermisoDenegado, EncargoAmbiguo, AgenteNoDisponible, KeyError) as error:
             print(f"RECHAZADO: {error}", file=sys.stderr)
             return 2
         print(f"{encargo.id} abierto para {encargo.agente} - trace {encargo.trace_id}")
@@ -79,8 +81,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.comando == "avanzar":
         try:
+            exigir_local("avanzar")
             encargo = encargos_mod.avanzar(args.encargo, args.estado, autor=args.autor, nota=args.nota)
-        except (encargos_mod.TransicionInvalida, KeyError) as error:
+        except (EscrituraFueraDeLocal, encargos_mod.TransicionInvalida, KeyError) as error:
             print(f"RECHAZADO: {error}", file=sys.stderr)
             return 2
         print(f"{encargo.id} -> {encargo.estado}")
@@ -88,8 +91,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.comando == "recordar":
         try:
+            exigir_local("recordar")
             recordar(args.agente, args.texto, tipo=args.tipo, encargo=args.encargo)
-        except (ValueError, KeyError) as error:
+        except (EscrituraFueraDeLocal, ValueError, KeyError) as error:
             print(f"RECHAZADO: {error}", file=sys.stderr)
             return 2
         print(f"memoria de {args.agente} actualizada")

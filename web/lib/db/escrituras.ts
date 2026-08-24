@@ -121,17 +121,40 @@ export const resolverHitl = async (args: {
           seq,
           args.actor,
           args.personaId,
-          JSON.stringify({ de: caso.estado, a: destino, motivo: args.motivo }),
+          // El motivo se guarda prefijado con la decision, y eso resuelve dos cosas a la vez.
+          //
+          // La visible: en la historia del caso se lee «aprobado: …» sin tener que deducirlo
+          // del cambio de estado.
+          //
+          // La que importa: `RunLog.casos()` cuenta un escalamiento cuando el motivo EMPIEZA
+          // con "escalamiento". Si una persona escribiera esa palabra como razon de su
+          // decision, el plegado contaria un escalamiento que la proyeccion no tiene, y las
+          // dos dejarian de cuadrar. Con el prefijo, un motivo humano nunca puede empezar asi.
+          JSON.stringify({
+            de: caso.estado,
+            a: destino,
+            motivo: `${args.resolucion === "aprobar" ? "aprobado" : "rechazado"}: ${args.motivo}`,
+          }),
         ],
       );
 
       // La proyeccion, en la misma transaccion. `ultimo_seq` avanza con ella: es lo que hace
       // que el candado del siguiente funcione.
+      //
+      // `responsable` TAMBIEN se mueve, y no es cosmetico. `RunLog.casos()` pliega asi:
+      //
+      //     caso.responsable = evento.get("actor", caso.responsable)
+      //
+      // es decir, una transicion deja como responsable a quien la hizo. Si aqui no se
+      // actualizara, la proyeccion se quedaria con el agente mientras el plegado devolveria
+      // a la persona — y §6 dice que si la proyeccion divergiera "se tira y se vuelve a
+      // plegar". Una proyeccion que no se puede reconstruir sin cambiar deja de ser una
+      // proyeccion y pasa a ser una segunda verdad.
       await ejecutar(
         `update casos
-            set estado = $2, actualizado_en = now(), ultimo_seq = $3
+            set estado = $2, actualizado_en = now(), ultimo_seq = $3, responsable = $4
           where trace_id = $1`,
-        [args.traceId, destino, seq],
+        [args.traceId, destino, seq, args.actor],
       );
 
       return { traceId: args.traceId, estado: destino, seq };
