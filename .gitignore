@@ -36,3 +36,7 @@ validacion.json
 .github/hooks/
 .github/skills/
 skills-lock.json
+
+# Espacio de trabajo temporal de herramientas. Nunca es codigo del proyecto, y un
+# `git add -A` se traga node_modules enteros si no esta aqui.
+tmp/
