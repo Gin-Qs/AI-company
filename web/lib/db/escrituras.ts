@@ -12,11 +12,26 @@
  *      literales de `services/runlog/caso.py`. Se validan dos veces: en el `check` de la
  *      columna y aqui, antes de escribir. La segunda da un mensaje que se puede leer; la
  *      primera es la que de verdad impide el dato malo.
- *   3. **Dos personas no se pisan.** El candado de §8.4 no es un lock: es la restriccion
- *      `unique (trace_id, seq)`. Quien resuelve lee el caso con `ultimo_seq = N` e inserta
- *      su evento con `seq = N+1`. Si dos aprueban a la vez, la segunda insercion viola la
- *      restriccion y su transaccion se revierte entera. No hay candado que liberar ni estado
- *      que comparar, y nadie sobrescribe a nadie.
+ *   3. **Dos personas no se pisan.** Y aqui hay una precision que costo descubrir, porque la
+ *      version corta —"lo resuelve `unique (trace_id, seq)`"— es enganosa.
+ *
+ *      Son DOS defensas, y la que de verdad actua no es la restriccion:
+ *
+ *      **La primera y la que gana: `select ... for update`.** Quien resuelve toma el lock de
+ *      la fila del caso antes de mirar nada. La segunda persona se queda esperando ahi
+ *      —comprobado contra Postgres real: 1.5s de espera— y cuando entra ya lee el
+ *      `ultimo_seq` NUEVO. Su `ultimoSeqVisto` no cuadra y se va por `TeGanaronDeMano` sin
+ *      llegar a insertar.
+ *
+ *      **La segunda, de red: `unique (trace_id, seq)`.** Solo dispara si algo se salta el
+ *      `for update`. Y ojo con como se prueba: una violacion de unicidad **solo se
+ *      manifiesta cuando la otra transaccion hace COMMIT**. Dos transacciones que ambas
+ *      revierten se dejan escribir la misma `(trace_id, seq)` sin quejarse — la segunda
+ *      espera, la primera revierte, y la segunda pasa. Un test que intente provocar la
+ *      carrera sin commitear reporta "las dos ganaron" y parece que el candado no existe.
+ *
+ *      QUIEN QUITE EL `for update` PENSANDO QUE LA RESTRICCION LO CUBRE deja el sistema
+ *      dependiendo de la red en vez de la puerta, y con eventos de sobra en el registro.
  *
  * El evento y la proyeccion `casos` se escriben en la MISMA transaccion. Si divergieran, la
  * proyeccion se puede tirar y volver a plegar desde `eventos` — eso es lo que la hace segura,
