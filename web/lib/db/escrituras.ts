@@ -570,3 +570,137 @@ export const importarFestivos = async (args: {
     return { agregados, actualizados, respetados };
   });
 };
+
+// --- avanzar un caso hasta la bandeja ---------------------------------------
+
+/**
+ * Lo que le faltaba al ciclo: **meter un caso a la bandeja.**
+ *
+ * `resolverHitl` saca casos de `esperando_humano`. Nada los metia. §4 retiro
+ * `office.cli avanzar` —era la unica forma de mover un encargo— y el portal no lo
+ * reemplazo, asi que un encargo convocado se quedaba en `recibido` para siempre y la bandeja
+ * no se llenaba nunca. El ciclo quedaba abierto justo por el lado que importa.
+ *
+ * El vocabulario es el del encargo, no el del caso, porque es el que usa quien trabaja:
+ *
+ *     empezar         pendiente -> en_curso   ·  el caso pasa a `en_proceso`
+ *     mandar_a_firma  necesita una persona    ·  el caso pasa a `esperando_humano`
+ *     bloquear        falta contexto          ·  el caso pasa a `bloqueado`
+ *     desbloquear     ya hay contexto         ·  el caso vuelve a `en_proceso`
+ *
+ * Y ahi se detiene. **Cerrar el caso NO esta aqui**: eso lo hace una persona desde la
+ * bandeja, que es el punto entero del portal. `office/bitacora.py` si permite un `cierre`
+ * que atraviesa `esperando_humano` de corrido — en el CLI tiene sentido, porque quien lo
+ * teclea ES la persona que firma. Reproducir ese atajo aqui dejaria cerrar un caso con firma
+ * humana sin que ninguna persona firmara.
+ */
+export const AVANCES = {
+  empezar: {
+    desde: ["recibido"],
+    a: "en_proceso",
+    verbo: "empezado",
+  },
+  mandar_a_firma: {
+    desde: ["en_proceso", "esperando_validacion"],
+    a: "esperando_humano",
+    verbo: "mandado a firma",
+  },
+  bloquear: {
+    desde: ["recibido", "en_proceso", "esperando_validacion", "esperando_humano"],
+    a: "bloqueado",
+    verbo: "bloqueado",
+  },
+  desbloquear: {
+    desde: ["bloqueado"],
+    a: "en_proceso",
+    verbo: "desbloqueado",
+  },
+} as const;
+
+export type Avance = keyof typeof AVANCES;
+
+/**
+ * Mueve el caso UN paso, con el mismo candado y la misma disciplina que `resolverHitl`.
+ *
+ * Un paso, no un camino: `bitacora.py:_camino()` calcula la ruta mas corta y atraviesa los
+ * estados intermedios de golpe. Aqui eso seria saltarse la bandeja. Cada transicion del
+ * portal es la decision de alguien, y cada decision deja su evento con su autor.
+ */
+export const avanzarCaso = async (args: {
+  traceId: string;
+  avance: Avance;
+  personaId: string;
+  actor: string;
+  motivo: string;
+  ultimoSeqVisto: number;
+}): Promise<Resuelto> => {
+  const regla = AVANCES[args.avance];
+
+  try {
+    return await enTransaccion(async (ejecutar) => {
+      const actual = await ejecutar(
+        `select estado, ultimo_seq from casos where trace_id = $1 for update`,
+        [args.traceId],
+      );
+      const caso = actual.rows[0] as { estado: string; ultimo_seq: number } | undefined;
+      if (!caso) throw new TransicionInvalida(`El caso ${args.traceId} no existe.`);
+
+      if (!(regla.desde as readonly string[]).includes(caso.estado)) {
+        throw new TransicionInvalida(
+          `${args.traceId} esta en ${caso.estado}: desde ahi no se puede ` +
+            `${args.avance.replace(/_/g, " ")}. Se puede desde: ${regla.desde.join(", ")}.`,
+        );
+      }
+
+      // La maquina de estados manda igual, aunque la regla de arriba ya lo permita. Las dos
+      // tienen que estar de acuerdo, y si alguna vez discrepan gana la de `caso.py`.
+      const permitidos = TRANSICIONES[caso.estado] ?? [];
+      if (!permitidos.includes(regla.a)) {
+        throw new TransicionInvalida(
+          `${args.traceId} esta en ${caso.estado} y no puede pasar a ${regla.a}; ` +
+            `permitido: ${permitidos.join(", ") || "nada, el caso ya cerro"}.`,
+        );
+      }
+
+      if (caso.ultimo_seq !== args.ultimoSeqVisto) {
+        throw new TeGanaronDeMano(
+          `Este caso cambio mientras lo mirabas: ibas por el evento ${args.ultimoSeqVisto} ` +
+            `y ya va en el ${caso.ultimo_seq}. Vuelve a cargarlo.`,
+        );
+      }
+
+      const seq = caso.ultimo_seq + 1;
+      await ejecutar(
+        `insert into eventos (trace_id, seq, evento, ts, actor, autor_persona, datos)
+         values ($1, $2, 'transicion', now(), $3, $4, $5::jsonb)`,
+        [
+          args.traceId,
+          seq,
+          args.actor,
+          args.personaId,
+          // Mismo prefijo que en `resolverHitl`, y por la misma razon: asi un motivo humano
+          // no puede empezar con "escalamiento" y descuadrar el conteo al replegar.
+          JSON.stringify({
+            de: caso.estado,
+            a: regla.a,
+            motivo: `${regla.verbo}: ${args.motivo}`,
+          }),
+        ],
+      );
+      await ejecutar(
+        `update casos
+            set estado = $2, actualizado_en = now(), ultimo_seq = $3, responsable = $4
+          where trace_id = $1`,
+        [args.traceId, regla.a, seq, args.actor],
+      );
+      return { traceId: args.traceId, estado: regla.a, seq };
+    });
+  } catch (error) {
+    if (esChoqueDeSeq(error)) {
+      throw new TeGanaronDeMano(
+        "Alguien movio este caso hace un momento. Tu cambio no se guardo; recarga para verlo.",
+      );
+    }
+    throw error;
+  }
+};

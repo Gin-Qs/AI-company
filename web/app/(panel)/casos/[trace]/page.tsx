@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 
 import { historiaDe, unCaso, type Evento } from "@/lib/db/consultas";
 
+import { sesion } from "@/lib/sesion";
+
 import { SinDatos } from "../../_componentes/SinDatos";
+import { Avanzar } from "./Avanzar";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +56,7 @@ export default async function DetalleDeCaso({
   params: Promise<{ trace: string }>;
 }) {
   const { trace } = await params;
-  const [caso, historia] = await Promise.all([unCaso(trace), historiaDe(trace)]);
+  const [caso, historia, s] = await Promise.all([unCaso(trace), historiaDe(trace), sesion()]);
 
   if (!caso.ok) {
     return (
@@ -121,6 +124,25 @@ export default async function DetalleDeCaso({
           <p className="nota">Ninguna accion al vencer un SLA es &laquo;aprobar&raquo;.</p>
         </div>
       </section>
+
+      {/* Mover el caso. Es lo que llena la bandeja: un encargo convocado nace en
+          `recibido` y alguien tiene que empezarlo y mandarlo a firma. */}
+      <h2 style={{ marginTop: 34, marginBottom: 12 }}>Mover el caso</h2>
+      <div className="tarjeta" style={{ marginBottom: 8 }}>
+        {s.estado === "vinculada" ? (
+          <Avanzar
+            traceId={c.trace_id}
+            agenteId={c.responsable}
+            estado={c.estado}
+            ultimoSeqVisto={c.ultimo_seq}
+          />
+        ) : (
+          <p className="nota">
+            Mover un caso queda registrado con tu nombre, y no se puede sin saber quien eres
+            en el registro.
+          </p>
+        )}
+      </div>
 
       <h2 style={{ marginTop: 34, marginBottom: 12 }}>Historia</h2>
       <p className="nota" style={{ marginBottom: 14 }}>

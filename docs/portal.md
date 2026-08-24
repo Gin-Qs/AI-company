@@ -949,3 +949,54 @@ Y una regla que importa más que las otras: **una importación no pisa lo que se
 mano.** El archivo no sabe cuáles descansa Fleeter de verdad; la persona que lo corrigió, sí.
 Reimportar un calendario y deshacer esas correcciones en silencio sería perder justo el dato
 que hacía falta.
+
+
+## 21. El hueco que sólo apareció al usar el portal `[CERRADO]`
+
+Fase B se dio por construida con las vistas 4, 8 y 9 — bandeja, convocar y pausa. Estaban las
+tres, sus pruebas en verde, y el ciclo **seguía abierto**.
+
+Lo destapó usarlo: Gabriel convocó `E-013` y `E-014` desde el portal, los dos con firma
+humana. Los dos encargos se crearon perfectos —autor real, criticidad `alta` por llevar
+HITL, sus dos eventos— y **ninguno llegó a la bandeja**. Se quedaron en `recibido`.
+
+La razón, mirada de cerca:
+
+| Ruta | Mueve el caso |
+|---|---|
+| `crearEncargo` (vista 8) | lo deja en `recibido` |
+| `resolverHitl` (vista 4) | lo saca de `esperando_humano` |
+| **nada** | **lo mete a `esperando_humano`** |
+
+§4 retiró `office.cli avanzar` —la única forma que existía de mover un encargo— y el plan
+nunca declaró qué lo reemplazaba. La lista de vistas de §10 no incluye ninguna que avance un
+caso, así que la omisión venía del plan, no de la construcción.
+
+**Por qué no se vio antes.** Las pruebas de la bandeja usan casos ya en `esperando_humano`,
+porque los fabrican. Nadie había recorrido el camino completo desde convocar. Un hueco entre
+dos piezas correctas no lo encuentra ninguna prueba que las mire por separado.
+
+### 21.1 Lo que se agregó, y lo que deliberadamente no
+
+`avanzarCaso` mueve el caso **un paso**, con el vocabulario del encargo:
+
+| Avance | El caso pasa a |
+|---|---|
+| `empezar` | `en_proceso` |
+| `mandar_a_firma` | `esperando_humano` — entra a la bandeja y arranca su SLA |
+| `bloquear` | `bloqueado` |
+| `desbloquear` | `en_proceso` |
+
+**Un paso, no un camino.** `office/bitacora.py:_camino()` calcula la ruta más corta y
+atraviesa los estados intermedios de golpe; un `cierre` sobre un encargo con HITL pasa por
+`esperando_humano` sin detenerse. En el CLI eso es correcto —quien lo teclea *es* la persona
+que firma—. Reproducirlo aquí dejaría cerrar un caso con firma humana sin que nadie firmara.
+
+**No hay avance que entregue ni que expire un caso**, y hay pruebas que lo fijan. Un caso se
+entrega desde la bandeja, con la firma de quien tiene autoridad; si se pudiera cerrar
+moviéndolo, el Gate sería opcional y la bandeja decorativa. Y expirar es lo que le pasa a un
+caso que *nadie miró*: poder hacerlo a mano borraría la diferencia entre un descuido y una
+decisión.
+
+De `esperando_humano` la única salida desde la pantalla del caso es **bloquearlo** — sacarlo
+de la bandeja porque falta algo para poder decidir.
