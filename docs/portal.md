@@ -22,10 +22,10 @@
 > 1 pausa. La proyección en Postgres es **idéntica campo por campo** al plegado de
 > `svc-runlog` desde el archivo, y correrla otra vez escribe cero filas. Ver §13.
 >
-> **El portal ya se vio con sesión iniciada** (23-ago). `fleeterceo` entra, la barra dice
-> `Gabriel · direccion`, y los datos de las vistas de lectura cuadran con `office.cli estado`
-> y el validador — §13.4. Falta el secreto `DIRECT_URL` en GitHub (§19.3) y el proyecto de
-> Vercel (§19.5).
+> **El portal está en producción** (24-ago):
+> `ai-company-git-main-ga-s-projectss.vercel.app`, con Vercel Authentication delante de Clerk.
+> Todo lo de §19 está hecho. Lo único que queda es **B+**, y lo que lo bloquea ya no es
+> infraestructura: hace falta un HITL real en la bandeja para poder correr el paso 5 de §13.
 
 ## 1. Qué es esto, en una frase
 
@@ -680,7 +680,7 @@ Criterios de `E-008`, en orden de ejecución:
    Las dos primeras filas salen de `registry/` y las dos últimas de Postgres, así que la
    coincidencia prueba las dos mitades: que el puerto del registro a TypeScript lee lo mismo
    que Python, y que la siembra no perdió ni inventó nada.
-5. ⏳ **Fase B:** dos navegadores con personas distintas. Una intenta aprobar un HITL fuera de su
+5. ⏳ **Fase B, lo único pendiente de todo el plan:** dos navegadores con personas distintas. Una intenta aprobar un HITL fuera de su
    equipo → se rechaza. La otra dentro del suyo → pasa y queda registrado con su nombre. Las
    dos aprueban el mismo HITL a la vez → una gana, la otra ve el mensaje de §8.4, y el registro
    tiene **un** evento, no dos.
@@ -749,7 +749,7 @@ de migración (§9) y la app completa contra un Postgres local y un Clerk en mod
 | **0** | CI (§11) · puerto del SLA (§8.1) · calendario y SLA configurables · `migrar_a_postgres.py` (§9) | ✅ **construida** |
 | **A** | Esqueleto + sólo lectura. Vistas 1, 2, 3, 6, 7, y la segunda puerta de §7.4 | ✅ **construida** |
 | **B** | Acciones: aprobar/rechazar HITL (vista 4) · pausar (vista 9) · convocar (vista 8) | ✅ **construida** |
-| **B+** | Cerrar `cumplida: true` en la condición de bandeja de HITL de los cinco agentes | Fase B verificada **en producción** |
+| **B+** | Cerrar `cumplida: true` en la condición de bandeja de HITL de los cinco agentes | 🟡 **lo único que falta.** El portal ya está en producción; falta el paso 5 de §13 |
 | **C** | Presupuesto (vista 5), pixel art embebido (vista 10), diseño final | Fase B. La vista 5 sólo tiene datos después de encender el primer agente |
 
 La fila **B+** es el punto del ejercicio. Todo lo demás es infraestructura para llegar ahí.
